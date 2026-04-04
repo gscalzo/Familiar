@@ -180,3 +180,37 @@ Key findings and fixes applied:
 - Created `Familiar/Domain/Protocols/SpriteProviding.swift` — protocol for sprite sheet access (frameCount, frameWidth, frameHeight, isFlipped, flipAllFrames)
 - Created `Familiar/Domain/Protocols/EnvironmentDetecting.swift` — protocol for environment queries (detectSurfaces, isFullScreenActive, currentScreenFrame, currentVisibleFrame, hasAdjacentScreen)
 - All quality checks pass (SwiftLint, SwiftFormat, build, 44 tests passing)
+
+---
+
+## 2026-04-04 — Task 8: AnimationStateMachine (TDD)
+
+### User Request
+> Implement Task 8: AnimationStateMachine — the core engine that drives all pet behavior, with full TDD.
+
+### Decisions
+- Delegate protocol (`AnimationStateMachineDelegate`) with 6 callbacks: frame change, movement, opacity, interval, respawn, flip
+- `setAnimationForTesting(_:)` public method exposed for test setup (avoids needing to go through respawn in every test)
+- Special animations (fall, drag, kill) resolved by name at init time
+- Direction convention: `isMovingLeft` controls sign of dx; when not moving left, dx is negated
+- Border type mapping: screenBottom -> taskbar, screenLeft/Right -> vertical, screenTop -> horizontal, windowTop -> window
+- No `Sendable` conformance needed — accessed from main thread only
+
+### What Was Done
+- Created `Familiar/Domain/Engine/AnimationStateMachine.swift`:
+  - `AnimationStateMachineDelegate` protocol with 6 delegate methods
+  - `AnimationStateMachine` class with tick loop, spawn, drag/fall/kill handling, flip action, opacity/interval interpolation
+  - Resolves special animation IDs (fall, drag, kill) by name at init
+  - `borderType(from:)` maps `SurfaceType` to `BorderType` for transition filtering
+- Created `FamiliarTests/Domain/AnimationStateMachineTests.swift` — 10 tests:
+  1. `respawnSetsInitialAnimation` — verifies spawn resolves to correct animation
+  2. `tickReportsFrameIndex` — verifies delegate receives correct frame indices
+  3. `tickAdvancesStep` — verifies animationStep increments each tick
+  4. `sequenceCompletionTransitions` — verifies transition to next animation after totalSteps
+  5. `dragStartSwitchesToDragAnimation` — verifies handleDragStart sets drag animation
+  6. `dragEndSwitchesToFallAnimation` — verifies handleDragEnd sets fall animation
+  7. `killSwitchesToKillAnimation` — verifies handleKill sets kill animation
+  8. `flipActionTogglesDirection` — verifies flip action toggles isMovingLeft and notifies delegate
+  9. `tickReportsMovement` — verifies dx/dy reported when non-zero
+  10. `respawnWithNoSpawnsDoesNotCrash` — verifies empty spawns handled gracefully
+- All quality checks pass (SwiftLint, SwiftFormat, build, 54 tests passing)
