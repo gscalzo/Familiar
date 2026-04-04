@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; if echo \"$f\" | grep -qE '\\.swift$'; then swiftformat --quiet \"$f\" 2>/dev/null; fi; } || true",
+            "timeout": 30,
+            "statusMessage": "Auto-formatting Swift file..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"SESSION END: Run ./scripts/check.sh before finishing. Ensure lint, format, build, tests pass. Commit if all green.\"}'",
+            "timeout": 5,
+            "statusMessage": "Session end checks..."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(swiftlint:*)",
+      "Bash(swiftformat:*)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(./scripts/check.sh:*)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

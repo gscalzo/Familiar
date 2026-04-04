@@ -64,3 +64,21 @@ Key findings and fixes applied:
 - Created `CLAUDE.md` with rules: always save plans, record prompts in history, coding standards
 - Created `docs/history.md` with full chronological log of all decisions
 - Created `.gitignore` for Xcode/Swift projects
+
+---
+
+## 2026-04-04 — Quality Checks & Hooks Setup
+
+### User Request
+> "Add lint, checks, run tests etc, as hooks and be sure that the lints, format, tests etc pass before considering a session done. Commit at the end of each successful session."
+
+### Actions
+- Created `.swiftlint.yml` with project-specific rules (line length 130, relaxed identifier names for x/y/dx/dy)
+- Created `.swiftformat` config (Swift 6.2, 4-space indent, sorted imports, max width 130)
+- Created `scripts/check.sh` — unified quality gate script (lint + format + build + test)
+- Created git pre-commit hook (`.git/hooks/pre-commit`) — blocks commits with SwiftLint/SwiftFormat issues
+- Created `.claude/settings.json` with Claude Code hooks:
+  - **PostToolUse (Write|Edit)**: auto-formats Swift files after every write/edit
+  - **Stop**: reminds to run checks before session end
+- Updated `CLAUDE.md` with mandatory session end protocol: run checks, fix failures, commit, update history
+- Auto-allow permissions for swiftlint, swiftformat, swift build/test, xcodebuild

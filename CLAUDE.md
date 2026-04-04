@@ -27,3 +27,27 @@
 - Domain layer must have zero framework imports (no AppKit, no CoreGraphics)
 - All initialization in `AppDelegate.applicationDidFinishLaunching`, not in SwiftUI `onAppear`
 - Single shared timer for all pets, not per-pet timers
+
+## Quality Checks (MANDATORY)
+
+Before considering a session done, ALL of these must pass:
+
+1. **SwiftLint** -- `swiftlint lint --quiet` (zero warnings/errors)
+2. **SwiftFormat** -- `swiftformat --lint DesktopPet/` (zero formatting issues)
+3. **Build** -- `swift build` or `xcodebuild` succeeds
+4. **Tests** -- `swift test` or `xcodebuild test` passes
+
+Run `./scripts/check.sh` to verify all at once.
+
+### Hooks in Place
+
+- **PostToolUse (Write|Edit)**: Auto-formats `.swift` files with SwiftFormat after every write/edit
+- **Stop**: Reminds to run `./scripts/check.sh` before ending session
+- **Git pre-commit**: Blocks commits if SwiftLint or SwiftFormat fail on staged `.swift` files
+
+### Session End Protocol
+
+1. Run `./scripts/check.sh all`
+2. Fix any failures
+3. Commit all changes with a descriptive message
+4. Update `docs/history.md` with session summary

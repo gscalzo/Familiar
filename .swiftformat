@@ -1,0 +1,14 @@
+--swiftversion 6.2
+--indent 4
+--indentcase false
+--trimwhitespace always
+--voidtype void
+--wraparguments before-first
+--wrapcollections before-first
+--maxwidth 130
+--sortimports alphabetized
+--stripunusedargs closure-only
+--self init-only
+--semicolons never
+--header strip
+--exclude .build,DerivedData,build
