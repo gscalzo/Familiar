@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Familiar — Quality Metrics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #f0f6fc;
+        }
+        .subtitle {
+            color: #8b949e;
+            margin-bottom: 2rem;
+        }
+        .badges {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .badge {
+            display: inline-flex;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .badge-label {
+            background: #30363d;
+            padding: 0.4rem 0.6rem;
+        }
+        .badge-value {
+            padding: 0.4rem 0.6rem;
+        }
+        .badge-blue .badge-value { background: #1f6feb; color: #fff; }
+        .badge-green .badge-value { background: #238636; color: #fff; }
+        .chart-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-title {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #f0f6fc;
+        }
+        canvas { width: 100% !important; }
+        .empty {
+            text-align: center;
+            padding: 3rem;
+            color: #8b949e;
+        }
+        .footer {
+            margin-top: 2rem;
+            color: #484f58;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Familiar</h1>
+    <p class="subtitle">Quality Metrics Dashboard</p>
+
+    <div class="badges">
+        <span class="badge badge-blue">
+            <span class="badge-label">tests</span>
+            <span class="badge-value" id="badge-tests">—</span>
+        </span>
+        <span class="badge badge-green">
+            <span class="badge-label">coverage</span>
+            <span class="badge-value" id="badge-coverage">—</span>
+        </span>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">Test Count</div>
+        <canvas id="testsChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">Code Coverage (%)</div>
+        <canvas id="coverageChart"></canvas>
+    </div>
+
+    <div class="empty" id="empty-msg" style="display:none;">
+        No metrics recorded yet. Push to collect data.
+    </div>
+
+    <p class="footer">Updated on each <code>git push</code> via pre-push hook</p>
+
+    <script>
+        const chartDefaults = {
+            responsive: true,
+            animation: { duration: 600 },
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: { color: '#8b949e', maxTicksLimit: 12 },
+                    grid: { color: '#21262d' }
+                },
+                y: {
+                    ticks: { color: '#8b949e' },
+                    grid: { color: '#21262d' },
+                    beginAtZero: true
+                }
+            }
+        };
+
+        fetch('history.json')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.length) {
+                    document.getElementById('empty-msg').style.display = 'block';
+                    return;
+                }
+
+                const labels = data.map(d => d.date);
+                const tests = data.map(d => d.tests);
+                const coverage = data.map(d => d.coverage);
+
+                // Update badges with latest values
+                const latest = data[data.length - 1];
+                document.getElementById('badge-tests').textContent = latest.tests;
+                document.getElementById('badge-coverage').textContent = latest.coverage + '%';
+
+                // Test count chart
+                new Chart(document.getElementById('testsChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: tests,
+                            borderColor: '#58a6ff',
+                            backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#58a6ff'
+                        }]
+                    },
+                    options: { ...chartDefaults }
+                });
+
+                // Coverage chart
+                new Chart(document.getElementById('coverageChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: coverage,
+                            borderColor: '#3fb950',
+                            backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3fb950'
+                        }]
+                    },
+                    options: {
+                        ...chartDefaults,
+                        scales: {
+                            ...chartDefaults.scales,
+                            y: { ...chartDefaults.scales.y, max: 100 }
+                        }
+                    }
+                });
+            })
+            .catch(() => {
+                document.getElementById('empty-msg').style.display = 'block';
+            });
+    </script>
+</body>
+</html>

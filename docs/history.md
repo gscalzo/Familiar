@@ -352,3 +352,41 @@ Key findings and fixes applied:
 - **26 source files** + 8 test files
 - **Key features**: eSheep XML parser, animation state machine, expression evaluator, sprite sheet loader, environment detector, PetPanel, MenuBarExtra UI
 - Ready for first manual run and visual testing
+
+---
+
+## 2026-04-04 — Pet Visibility Fixes
+
+### User Request
+> "running, nothing happens" / "ok, i can see the sheep but it went to the other screen and disappeared. also i cannot see the paws in the menubar"
+
+### Actions
+- Fixed default direction: `isMovingLeft=true` (eSheep sprites face left by default)
+- Added Y coordinate conversion from eSheep (top-left origin) to AppKit (bottom-left origin)
+- Added bounds checking: pet respawns at center-bottom when walking off all screens
+- Switched MenuBarExtra to default `.menu` style for reliable icon display
+- Simplified MenuBarView for standard menu layout
+- Added debug NSLog for XML loading diagnostics
+
+---
+
+## 2026-04-04 — Quality Metrics & Dashboard
+
+### User Request
+> "implement a pre-commit hook to run tests, add badges with number of tests and code coverage. also implement a page on github pages that shows code coverage and number of tests"
+
+### Decisions
+- Pre-commit: lint + format only (fast)
+- Pre-push: tests + coverage + metrics collection (blocks push on failure)
+- Metrics stored as JSON, dashboard rendered with Chart.js
+- Swift script for metrics collection (no Python dependency)
+- GitHub Pages serves dashboard from `docs/metrics/`
+
+### Actions
+- Fixed pre-commit hook: replaced all DesktopPet references with Familiar
+- Created `scripts/collect-metrics.swift`: Codable-based JSON append
+- Created `.git/hooks/pre-push`: runs tests + coverage, collects metrics, updates README badges
+- Created `docs/metrics/index.html`: Chart.js dashboard with test count + coverage charts
+- Created `docs/metrics/history.json`: empty array, populated on each push
+- Added shields.io badges to README.md
+- Created design doc: `docs/plans/2026-04-04-quality-metrics-design.md`
