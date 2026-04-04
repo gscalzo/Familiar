@@ -53,8 +53,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func loadDefaultPetAndSpawn() {
-        // Try SPM bundle resource first, then main bundle
-        let xmlURL = Bundle.main.url(forResource: "animations", withExtension: "xml")
+        let xmlURL = Bundle.module.url(forResource: "animations", withExtension: "xml")
+            ?? Bundle.main.url(forResource: "animations", withExtension: "xml")
         if let url = xmlURL, let data = try? Data(contentsOf: url) {
             try? petManager.loadXML(from: data)
             petManager.addPet()

@@ -21,7 +21,8 @@ let package = Package(
         .executableTarget(
             name: "FamiliarApp",
             dependencies: ["FamiliarDomain", "FamiliarInfrastructure"],
-            path: "Familiar/App"
+            path: "Familiar/App",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "FamiliarTests",
