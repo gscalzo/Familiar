@@ -64,11 +64,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             let data = try Data(contentsOf: url)
             try petManager.loadXML(from: data)
-            print(
+            NSLog(
                 "[Familiar] XML loaded: \(petManager.loadedPetData?.header.petName ?? "?"), \(petManager.loadedPetData?.animations.count ?? 0) animations"
             )
-            petManager.addPet()
-            NSLog("[Familiar] Pet added. Active pets: \(petManager.activePets.count)")
+
+            // Set up state file and animation config
+            let watcher = petManager.stateFileWatcher
+            watcher.writeDefaultConfigIfNeeded()
+            petManager.loadAnimationConfig()
+
+            // Ensure default state file exists so reconciliation spawns a pet
+            if !watcher.stateFileExists() || watcher.readStates().isEmpty {
+                watcher.writeStates(["default": PetState.default])
+                NSLog("[Familiar] Wrote default state file")
+            }
+
+            // Start the timer; reconciliation on first tick will spawn pets from state file
+            petManager.ensureTimerStarted()
+
+            NSLog("[Familiar] Pet manager initialized. Reconciliation will spawn pets.")
         } catch {
             NSLog("[Familiar] ERROR loading XML: \(error)")
         }

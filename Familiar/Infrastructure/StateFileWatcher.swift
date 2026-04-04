@@ -16,6 +16,22 @@ public final class StateFileWatcher: Sendable {
         self.init(directory: NSHomeDirectory() + "/.familiar")
     }
 
+    public func writeStates(_ states: [String: PetState]) {
+        try? FileManager.default.createDirectory(
+            at: directory, withIntermediateDirectories: true
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        if let data = try? encoder.encode(states) {
+            try? data.write(to: stateURL)
+        }
+    }
+
+    public func stateFileExists() -> Bool {
+        FileManager.default.fileExists(atPath: stateURL.path)
+    }
+
     public func readStates() -> [String: PetState] {
         guard let data = try? Data(contentsOf: stateURL) else { return [:] }
         let decoder = JSONDecoder()

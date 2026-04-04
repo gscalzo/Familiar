@@ -8,6 +8,7 @@ final class PetInstance: Identifiable {
     let panel: PetPanel
     let stateMachine: AnimationStateMachine
     let spriteSheet: SpriteSheetLoader
+    var name: String?
 
     var position: CGPoint = .zero
     var currentSurface: SurfaceType?
@@ -15,11 +16,13 @@ final class PetInstance: Identifiable {
     init(
         panel: PetPanel,
         stateMachine: AnimationStateMachine,
-        spriteSheet: SpriteSheetLoader
+        spriteSheet: SpriteSheetLoader,
+        name: String? = nil
     ) {
         self.panel = panel
         self.stateMachine = stateMachine
         self.spriteSheet = spriteSheet
+        self.name = name
 
         panel.onDragStart = { [weak self] in
             self?.stateMachine.handleDragStart()

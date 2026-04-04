@@ -471,3 +471,28 @@ Create AnimationMapper — a pure domain enum that resolves mood/event names to 
 - Manual tested: status, mood set, event fire, named pets, kill
 - `./scripts/check.sh` all green
 - Committed: `feat: add fam CLI for controlling pet moods and events`
+
+---
+
+## 2026-04-04 — Task 6: Integrate StateFileWatcher into PetManager
+
+### User Request
+> "Wire StateFileWatcher and AnimationMapper into PetManager so that `fam` CLI commands control pet behavior in real-time."
+
+### Decisions
+- PetInstance gets a `name: String?` property to track named (state-file-driven) vs unnamed (menu-bar-added) pets
+- PetManager gains `stateFileWatcher`, `animationConfig`, `knownMoods` dictionary
+- Common pet creation logic extracted into `makePetInstance(name:)` private helper
+- `reconcileFromStateFile()` called at start of every tick: spawns new, kills removed, handles mood/event changes
+- AppDelegate no longer calls `addPet()` directly; writes default state and lets reconciliation spawn pets
+- `StateFileWatcher` gains `writeStates()` and `stateFileExists()` public methods
+- Animation config loaded once at startup via `loadAnimationConfig()`
+- Pets placed at random X along bottom of main screen (not center)
+
+### Actions
+- Modified `Familiar/App/Presentation/PetInstance.swift`: added `name: String?` property and init parameter
+- Modified `Familiar/Infrastructure/StateFileWatcher.swift`: added `writeStates()` and `stateFileExists()` methods
+- Rewrote `Familiar/App/PetManager.swift`: added reconciliation loop, `spawnPet(named:mood:)`, `removePetByName()`, `makePetInstance()` factory, `ensureTimerStarted()`
+- Updated `Familiar/App/AppDelegate.swift`: initializes state file/config, uses reconciliation instead of direct `addPet()`
+- `swift build` succeeds, all 91 tests pass, `./scripts/check.sh` all green
+- Committed: `feat: integrate StateFileWatcher into PetManager for CLI-driven pets`
