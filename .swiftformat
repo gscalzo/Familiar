@@ -6,7 +6,7 @@
 --wraparguments before-first
 --wrapcollections before-first
 --maxwidth 130
---sortimports alphabetized
+--importgrouping alpha
 --stripunusedargs closure-only
 --self init-only
 --semicolons never
