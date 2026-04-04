@@ -496,3 +496,21 @@ Create AnimationMapper — a pure domain enum that resolves mood/event names to 
 - Updated `Familiar/App/AppDelegate.swift`: initializes state file/config, uses reconciliation instead of direct `addPet()`
 - `swift build` succeeds, all 91 tests pass, `./scripts/check.sh` all green
 - Committed: `feat: integrate StateFileWatcher into PetManager for CLI-driven pets`
+
+---
+
+## 2026-04-04 — Tasks 4 + 7: StateFileWatcher + Quality
+
+### Actions
+- Created `Familiar/Infrastructure/StateFileWatcher.swift` with ISO 8601 date handling
+- Created `FamiliarTests/Infrastructure/StateFileWatcherTests.swift` (8 tests)
+- All 91 tests across 12 suites passing
+- All quality checks pass (SwiftLint, SwiftFormat, build, tests)
+
+### fam CLI + Pluggable Animations Summary
+The complete feature set implemented across Tasks 1-7:
+- **Domain**: PetState, AnimationConfig, AnimationMapper, StateMachine mood/event methods
+- **Infrastructure**: StateFileWatcher (reads/writes ~/.familiar/)
+- **App**: PetManager reconciliation loop, state-file-driven pet lifecycle
+- **CLI**: `fam` tool — `fam work`, `fam yay`, `fam think agent-42`, `fam kill`
+- **Protocol**: File-based IPC via ~/.familiar/state.json, configurable animation mapping via ~/.familiar/animations.json
