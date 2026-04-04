@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var onboardingWindow: NSWindow?
 
     func applicationDidFinishLaunching(_: Notification) {
+        NSLog("[Familiar] applicationDidFinishLaunching started")
         NSApp.setActivationPolicy(.accessory)
 
         activityToken = ProcessInfo.processInfo.beginActivity(
@@ -55,9 +56,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func loadDefaultPetAndSpawn() {
         let xmlURL = Bundle.module.url(forResource: "animations", withExtension: "xml")
             ?? Bundle.main.url(forResource: "animations", withExtension: "xml")
-        if let url = xmlURL, let data = try? Data(contentsOf: url) {
-            try? petManager.loadXML(from: data)
+        guard let url = xmlURL else {
+            NSLog("[Familiar] ERROR: animations.xml not found in bundle")
+            return
+        }
+        NSLog("[Familiar] Loading XML from: \(url.path)")
+        do {
+            let data = try Data(contentsOf: url)
+            try petManager.loadXML(from: data)
+            print(
+                "[Familiar] XML loaded: \(petManager.loadedPetData?.header.petName ?? "?"), \(petManager.loadedPetData?.animations.count ?? 0) animations"
+            )
             petManager.addPet()
+            NSLog("[Familiar] Pet added. Active pets: \(petManager.activePets.count)")
+        } catch {
+            NSLog("[Familiar] ERROR loading XML: \(error)")
         }
     }
 }

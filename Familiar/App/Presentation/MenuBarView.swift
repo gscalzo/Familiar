@@ -7,68 +7,35 @@ struct MenuBarView: View {
     @Environment(PetManager.self) private var petManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(petManager.loadedPetData?.header.petName ?? "Familiar")
-                .font(.headline)
-                .padding(.horizontal)
-                .padding(.top, 8)
+        Button("Add Pet") { petManager.addPet() }
+            .keyboardShortcut("n")
 
-            Divider()
+        Button("Load Custom Pet...") { loadCustomPet() }
+            .keyboardShortcut("o")
 
-            Button("Add Pet") { petManager.addPet() }
-                .keyboardShortcut("n")
-                .padding(.horizontal)
+        Divider()
 
-            Button("Load Custom Pet...") { loadCustomPet() }
-                .keyboardShortcut("o")
-                .padding(.horizontal)
-
-            if !petManager.activePets.isEmpty {
-                Divider()
-
-                Text("Active Pets (\(petManager.activePets.count))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-
-                ForEach(petManager.activePets) { pet in
-                    HStack {
-                        Text("\(petManager.loadedPetData?.header.petName ?? "Pet") #\(petIndex(pet) + 1)")
-                        Spacer()
-                        Button(
-                            action: { petManager.removePet(id: pet.id) },
-                            label: { Image(systemName: "xmark.circle") }
-                        )
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal)
+        if !petManager.activePets.isEmpty {
+            ForEach(Array(petManager.activePets.enumerated()), id: \.element.id) { index, pet in
+                Button("Remove \(petManager.loadedPetData?.header.petName ?? "Pet") #\(index + 1)") {
+                    petManager.removePet(id: pet.id)
                 }
             }
-
             Divider()
-
-            Button(petManager.isPaused ? "Resume All" : "Pause All") {
-                petManager.togglePause()
-            }
-            .keyboardShortcut("p")
-            .padding(.horizontal)
-
-            Button("Reset Positions") { petManager.resetPositions() }
-                .keyboardShortcut("r")
-                .padding(.horizontal)
-
-            Divider()
-
-            Button("Quit") { NSApp.terminate(nil) }
-                .keyboardShortcut("q")
-                .padding(.horizontal)
-                .padding(.bottom, 8)
         }
-        .frame(width: 220)
-    }
 
-    private func petIndex(_ pet: PetInstance) -> Int {
-        petManager.activePets.firstIndex(where: { $0.id == pet.id }) ?? 0
+        Button(petManager.isPaused ? "Resume All" : "Pause All") {
+            petManager.togglePause()
+        }
+        .keyboardShortcut("p")
+
+        Button("Reset Positions") { petManager.resetPositions() }
+            .keyboardShortcut("r")
+
+        Divider()
+
+        Button("Quit") { NSApp.terminate(nil) }
+            .keyboardShortcut("q")
     }
 
     private func loadCustomPet() {

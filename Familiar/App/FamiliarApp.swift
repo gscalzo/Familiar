@@ -9,6 +9,5 @@ struct FamiliarApp: App {
             MenuBarView()
                 .environment(appDelegate.petManager)
         }
-        .menuBarExtraStyle(.window)
     }
 }

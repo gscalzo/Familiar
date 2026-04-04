@@ -30,7 +30,7 @@ final class PetInstance: Identifiable {
         }
         panel.onRemove = { [weak self] in
             guard let self else { return }
-            _ = id // prevent unused warning; removal handled by PetManager
+            _ = id
         }
     }
 }
@@ -40,7 +40,8 @@ final class PetInstance: Identifiable {
 extension PetInstance: AnimationStateMachineDelegate {
     nonisolated func stateMachine(_: AnimationStateMachine, didChangeFrame index: Int) {
         MainActor.assumeIsolated {
-            panel.spriteView.image = spriteSheet.image(at: index)
+            let img = spriteSheet.image(at: index)
+            panel.spriteView.image = img
         }
     }
 
@@ -58,13 +59,9 @@ extension PetInstance: AnimationStateMachineDelegate {
         }
     }
 
-    nonisolated func stateMachine(_: AnimationStateMachine, didChangeInterval _: Int) {
-        // Timer interval managed centrally by PetManager
-    }
+    nonisolated func stateMachine(_: AnimationStateMachine, didChangeInterval _: Int) {}
 
-    nonisolated func stateMachineDidRequestRespawn(_: AnimationStateMachine) {
-        // PetManager handles respawn positioning
-    }
+    nonisolated func stateMachineDidRequestRespawn(_: AnimationStateMachine) {}
 
     nonisolated func stateMachineDidFlipSprites(_: AnimationStateMachine) {
         MainActor.assumeIsolated {

@@ -62,16 +62,16 @@ final class PetManager {
 
         stateMachine.respawn()
 
-        let ctx = buildExpressionContext(spriteSheet: spriteSheet)
-        if let spawn = petData.spawns.first {
-            let spawnX = spawn.x.evaluate(context: ctx)
-            let spawnY = spawn.y.evaluate(context: ctx)
-            pet.position = CGPoint(x: CGFloat(spawnX), y: CGFloat(spawnY))
-            panel.setFrameOrigin(pet.position)
-        }
+        // Place pet in center of screen for now (spawn logic TBD)
+        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        pet.position = CGPoint(x: screen.midX, y: screen.minY)
+        panel.setFrameOrigin(pet.position)
 
         activePets.append(pet)
         panel.orderFront(nil)
+        NSLog(
+            "[Familiar] Panel at pos=\(pet.position), frame=\(panel.frame), spriteSize=\(spriteSheet.frameWidth)x\(spriteSheet.frameHeight), frameCount=\(spriteSheet.frameCount)"
+        )
 
         if sharedTimer == nil { startTimer() }
     }
@@ -132,12 +132,41 @@ final class PetManager {
 
         for pet in activePets {
             pet.stateMachine.tick(currentSurface: pet.currentSurface)
+            checkBounds(pet)
         }
 
         if environmentDetector.isFullScreenActive() {
             activePets.forEach { $0.panel.level = .normal }
         } else {
             activePets.forEach { $0.panel.level = .statusBar }
+        }
+    }
+
+    private func checkBounds(_ pet: PetInstance) {
+        // Get the union of all screen frames
+        let screens = NSScreen.screens
+        guard !screens.isEmpty else { return }
+
+        let pos = pet.position
+        let size = CGFloat(pet.spriteSheet.frameWidth)
+
+        // Check if pet is completely off all screens (with margin)
+        let margin: CGFloat = size * 2
+        let isOffScreen = !screens.contains { screen in
+            let f = screen.frame
+            let expanded = NSRect(
+                x: f.minX - margin, y: f.minY - margin,
+                width: f.width + margin * 2, height: f.height + margin * 2
+            )
+            return expanded.contains(pos)
+        }
+
+        if isOffScreen {
+            // Respawn at center of main screen
+            let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+            pet.position = CGPoint(x: screen.midX, y: screen.minY)
+            pet.panel.setFrameOrigin(pet.position)
+            pet.stateMachine.respawn()
         }
     }
 
