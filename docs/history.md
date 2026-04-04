@@ -161,3 +161,22 @@ Key findings and fixes applied:
 - Used corrected `frameIndex` formula: `frames[((step - frames.count) % cycleLength) + repeatFrom]`
 - All types are `public` with `Sendable` conformance, zero framework imports
 - All quality checks pass (SwiftLint, SwiftFormat, build, 8 tests passing)
+
+---
+
+## 2026-04-04 — Task 7: Domain Protocols
+
+### User Request
+> Implement Task 7: create domain protocol files (SpriteProviding, EnvironmentDetecting) and ScreenEdge enum in Domain/Protocols directory.
+
+### Decisions
+- `SpriteProviding` is `AnyObject` only (no `Sendable`) since concrete implementations will wrap NSImage
+- `EnvironmentDetecting` is `AnyObject` only, returns domain types (`WalkableSurface`, `Rect`, `ScreenEdge`)
+- `ScreenEdge` is a simple `Sendable` enum (left/right/top/bottom)
+- All types are public with zero framework imports — pure domain ports
+
+### What Was Done
+- Created `Familiar/Domain/Protocols/ScreenEdge.swift` — enum for screen edge identification
+- Created `Familiar/Domain/Protocols/SpriteProviding.swift` — protocol for sprite sheet access (frameCount, frameWidth, frameHeight, isFlipped, flipAllFrames)
+- Created `Familiar/Domain/Protocols/EnvironmentDetecting.swift` — protocol for environment queries (detectSurfaces, isFullScreenActive, currentScreenFrame, currentVisibleFrame, hasAdjacentScreen)
+- All quality checks pass (SwiftLint, SwiftFormat, build, 44 tests passing)
