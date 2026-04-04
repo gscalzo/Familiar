@@ -266,4 +266,53 @@ struct AnimationStateMachineTests {
 
         #expect(delegate.respawnCount == 0)
     }
+
+    @Test("setMoodAnimation switches to specified animation and loops")
+    func setMoodAnimationLoops() {
+        let walk = makeAnimation(id: 1, frames: [0, 1, 2], endAnimation: [
+            NextAnim(animationId: 1, probability: 100, only: .none),
+        ])
+        let run = makeAnimation(id: 7, frames: [10, 11], endAnimation: [
+            NextAnim(animationId: 7, probability: 100, only: .none),
+        ])
+        let sm = AnimationStateMachine(
+            animations: [1: walk, 7: run], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        let delegate = MockDelegate()
+        sm.delegate = delegate
+
+        sm.setMoodAnimation(7)
+        #expect(sm.currentAnimationID == 7)
+
+        // Tick through full sequence — should loop back to 7
+        for _ in 0 ..< 10 {
+            sm.tick(currentSurface: nil)
+        }
+        #expect(sm.currentAnimationID == 7)
+    }
+
+    @Test("playEventAnimation plays once then returns to mood")
+    func playEventAnimationReturnToMood() {
+        let walk = makeAnimation(id: 1, frames: [0, 1], endAnimation: [
+            NextAnim(animationId: 1, probability: 100, only: .none),
+        ])
+        let jump = makeAnimation(id: 25, frames: [20, 21], endAnimation: [])
+        let sm = AnimationStateMachine(
+            animations: [1: walk, 25: jump], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        let delegate = MockDelegate()
+        sm.delegate = delegate
+
+        sm.setMoodAnimation(1)
+        sm.playEventAnimation(25, returnToMood: 1)
+        #expect(sm.currentAnimationID == 25)
+
+        // Tick through event animation — should return to mood (1)
+        for _ in 0 ..< 10 {
+            sm.tick(currentSurface: nil)
+        }
+        #expect(sm.currentAnimationID == 1)
+    }
 }

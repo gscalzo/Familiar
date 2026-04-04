@@ -29,6 +29,10 @@ public final class AnimationStateMachine {
     private let dragAnimationID: Int?
     private let killAnimationID: Int?
 
+    // Mood / event state
+    private var moodAnimationID: Int?
+    private var returnToMoodID: Int?
+
     // Internal state
     private var totalSteps: Int = 0
     private var repeatValue: Int = 0
@@ -145,6 +149,17 @@ public final class AnimationStateMachine {
         }
     }
 
+    public func setMoodAnimation(_ id: Int) {
+        moodAnimationID = id
+        returnToMoodID = nil
+        setAnimation(id)
+    }
+
+    public func playEventAnimation(_ id: Int, returnToMood moodId: Int) {
+        returnToMoodID = moodId
+        setAnimation(id)
+    }
+
     /// Test-only entry point to set current animation without going through respawn.
     public func setAnimationForTesting(_ id: Int) {
         setAnimation(id)
@@ -169,13 +184,20 @@ public final class AnimationStateMachine {
     }
 
     private func handleSequenceComplete(_ anim: Animation, currentSurface: SurfaceType?) {
-        // Determine border context from current surface
-        let borderContext = borderType(from: currentSurface)
+        // If returning from event animation, go back to mood
+        if let moodId = returnToMoodID {
+            returnToMoodID = nil
+            setAnimation(moodId)
+            return
+        }
 
+        let borderContext = borderType(from: currentSurface)
         if let nextId = TransitionPicker.pick(from: anim.endAnimation, context: borderContext) {
             setAnimation(nextId)
+        } else if let moodId = moodAnimationID {
+            // No transition — loop mood animation
+            setAnimation(moodId)
         } else {
-            // No valid transition — respawn
             respawn()
         }
     }

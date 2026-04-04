@@ -390,3 +390,42 @@ Key findings and fixes applied:
 - Created `docs/metrics/history.json`: empty array, populated on each push
 - Added shields.io badges to README.md
 - Created design doc: `docs/plans/2026-04-04-quality-metrics-design.md`
+
+---
+
+## 2026-04-04 – Task 1: PetState + AnimationConfig Domain Models
+
+### Request
+Create two Codable domain models (`PetState`, `AnimationConfig`) for file-based IPC between the `fam` CLI and the Familiar desktop app, plus tests.
+
+### Decisions
+- Followed TDD: wrote `PetStateTests.swift` first, confirmed compilation failure, then created models
+- `PetState` uses `Foundation` for `Date`/`Codable`; `AnimationConfig` needs no imports (pure Swift `Codable`)
+- Both types are `public`, `Sendable`, with a static `.default`
+
+### Actions
+- Created `FamiliarTests/Domain/PetStateTests.swift` (4 tests: JSON decode, null handling, round-trip, default)
+- Created `Familiar/Domain/Model/PetState.swift`
+- Created `Familiar/Domain/Model/AnimationConfig.swift`
+- All 76 tests pass; `./scripts/check.sh` all green
+- Committed: `feat: add PetState and AnimationConfig domain models`
+
+---
+
+## 2026-04-04 — Task 3: AnimationStateMachine mood and event support
+
+### Prompt
+Add `setMoodAnimation` and `playEventAnimation` methods to AnimationStateMachine, plus modify `handleSequenceComplete` to support returning from events to mood animations. TDD approach.
+
+### Decisions
+- Added `moodAnimationID` and `returnToMoodID` private properties to track mood/event state
+- `handleSequenceComplete` priority: return-from-event first, then normal transitions, then mood fallback, then respawn
+- Event animations play once and return to the mood animation; mood animations loop indefinitely
+
+### Actions
+- Added 2 new tests to `FamiliarTests/Domain/AnimationStateMachineTests.swift` (setMoodAnimationLoops, playEventAnimationReturnToMood)
+- Verified tests failed before implementation (methods did not exist)
+- Added `moodAnimationID`, `returnToMoodID` properties and `setMoodAnimation`, `playEventAnimation` public methods
+- Modified `handleSequenceComplete` with event-return and mood-fallback logic
+- All 83 tests pass; `./scripts/check.sh` all green
+- Committed: `feat: add mood and event animation support to AnimationStateMachine`
