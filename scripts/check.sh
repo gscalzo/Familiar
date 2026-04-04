@@ -1,5 +1,5 @@
 #!/bin/bash
-# Quality checks for DesktopPet project
+# Quality checks for Familiar project
 # Usage: ./scripts/check.sh [lint|format|test|all]
 
 set -euo pipefail
@@ -16,7 +16,7 @@ FAILED=0
 
 check_lint() {
     echo -e "${YELLOW}Running SwiftLint...${NC}"
-    if [ -d "DesktopPet" ]; then
+    if [ -d "Familiar" ]; then
         if swiftlint lint --quiet 2>/dev/null; then
             echo -e "${GREEN}SwiftLint: PASSED${NC}"
         else
@@ -30,11 +30,11 @@ check_lint() {
 
 check_format() {
     echo -e "${YELLOW}Running SwiftFormat lint...${NC}"
-    if [ -d "DesktopPet" ]; then
-        if swiftformat --lint DesktopPet/ 2>/dev/null; then
+    if [ -d "Familiar" ]; then
+        if swiftformat --lint Familiar/ 2>/dev/null; then
             echo -e "${GREEN}SwiftFormat: PASSED${NC}"
         else
-            echo -e "${RED}SwiftFormat: FAILED (run 'swiftformat DesktopPet/' to fix)${NC}"
+            echo -e "${RED}SwiftFormat: FAILED (run 'swiftformat Familiar/' to fix)${NC}"
             FAILED=1
         fi
     else
@@ -51,8 +51,8 @@ check_build() {
             echo -e "${RED}Build: FAILED${NC}"
             FAILED=1
         fi
-    elif [ -d "DesktopPet.xcodeproj" ]; then
-        if xcodebuild -scheme DesktopPet -destination 'platform=macOS' build 2>&1 | tail -5; then
+    elif [ -d "Familiar.xcodeproj" ]; then
+        if xcodebuild -scheme Familiar -destination 'platform=macOS' build 2>&1 | tail -5; then
             echo -e "${GREEN}Build: PASSED${NC}"
         else
             echo -e "${RED}Build: FAILED${NC}"
@@ -72,8 +72,8 @@ check_test() {
             echo -e "${RED}Tests: FAILED${NC}"
             FAILED=1
         fi
-    elif [ -d "DesktopPet.xcodeproj" ]; then
-        if xcodebuild -scheme DesktopPet -destination 'platform=macOS' test 2>&1 | tail -10; then
+    elif [ -d "Familiar.xcodeproj" ]; then
+        if xcodebuild -scheme Familiar -destination 'platform=macOS' test 2>&1 | tail -10; then
             echo -e "${GREEN}Tests: PASSED${NC}"
         else
             echo -e "${RED}Tests: FAILED${NC}"

@@ -140,3 +140,24 @@ Key findings and fixes applied:
 - All types are `public` with `Sendable` conformance for Swift 6 strict concurrency
 - Zero framework imports — pure Swift domain layer
 - All quality checks pass (SwiftLint, SwiftFormat, build, tests)
+
+---
+
+## 2026-04-04 — Task 3: Domain Models — Movement, AnimationSequence, Animation, PetAnimationData
+
+### User Request
+> "Implement Task 3: Domain Models — Movement, AnimationSequence, Animation, PetAnimationData"
+
+### Actions
+- Created 4 domain model files in `Familiar/Domain/Model/`:
+  - `Movement.swift` — Movement descriptor with x/y/interval expressions, offsetY, opacity
+  - `AnimationSequence.swift` — Frame sequence with repeat logic; `totalSteps(repeatValue:)` and `frameIndex(at:)` methods
+  - `Animation.swift` — Full animation definition with start/end movements, sequence, and transition arrays (endAnimation/endBorder/endGravity)
+  - `PetAnimationData.swift` — Top-level pet data aggregating header, sprite info, spawns, animations, and children
+- Created `FamiliarTests/Domain/AnimationSequenceTests.swift` — 7 tests covering:
+  - `totalSteps` with no repeat, with repeat, and repeatFrom=0
+  - `frameIndex` in initial range, in repeat cycle, and with repeatFrom=0
+- Named `AnimationSequence` to avoid collision with Swift stdlib `Sequence`
+- Used corrected `frameIndex` formula: `frames[((step - frames.count) % cycleLength) + repeatFrom]`
+- All types are `public` with `Sendable` conformance, zero framework imports
+- All quality checks pass (SwiftLint, SwiftFormat, build, 8 tests passing)

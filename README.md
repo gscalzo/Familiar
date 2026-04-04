@@ -1,4 +1,4 @@
-# Desktop Pet for macOS
+# Familiar for macOS
 
 A macOS menubar app that recreates the classic eSheep desktop pet experience. Your pet walks on screen edges and window title bars, falls with gravity, sleeps, runs, climbs walls, and responds to drag interactions.
 

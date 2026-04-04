@@ -1,6 +1,6 @@
 included:
-  - DesktopPet
-  - DesktopPetTests
+  - Familiar
+  - FamiliarTests
 
 excluded:
   - .build

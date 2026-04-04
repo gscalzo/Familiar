@@ -1,4 +1,4 @@
-# Desktop Pet Research - Comprehensive Resource Directory
+# Familiar Research - Comprehensive Resource Directory
 
 ## Reference Projects
 
@@ -246,7 +246,7 @@ NSWindow(styleMask: [.borderless])
 
 ### Menu Bar App
 ```swift
-MenuBarExtra("Desktop Pet", systemImage: "pawprint.fill") { ... }
+MenuBarExtra("Familiar", systemImage: "pawprint.fill") { ... }
 // + LSUIElement = YES in Info.plist
 ```
 

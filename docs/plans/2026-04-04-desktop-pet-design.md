@@ -1,4 +1,4 @@
-# Desktop Pet for macOS - Design Document
+# Familiar for macOS - Design Document
 
 **Date:** 2026-04-04
 **Status:** Final Draft (post-review)
@@ -33,7 +33,7 @@ Dependencies flow inward only. The Domain layer has ZERO framework imports (no A
 ┌─────────────────────────────────────────────────────────┐
 │                       App Layer                          │
 │  (Composition Root: wires everything together)           │
-│  DesktopPetApp.swift, AppDelegate.swift, PetManager.swift│
+│  FamiliarApp.swift, AppDelegate.swift, PetManager.swift│
 ├─────────────────────────────────────────────────────────┤
 │                   Presentation Layer                     │
 │  (UI: AppKit panels, SwiftUI menus, sprite rendering)    │
@@ -55,7 +55,7 @@ Dependencies flow inward only. The Domain layer has ZERO framework imports (no A
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    DesktopPetApp                          │
+│                    FamiliarApp                          │
 │  MenuBarExtra + NSApplicationDelegateAdaptor              │
 ├─────────────────────────────────────────────────────────┤
 │               PetManager (@Observable)                   │
@@ -760,12 +760,12 @@ final class PetManager {
 
 ```swift
 @main
-struct DesktopPetApp: App {
+struct FamiliarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var petManager = PetManager()
 
     var body: some Scene {
-        MenuBarExtra("Desktop Pet", systemImage: "pawprint.fill") {
+        MenuBarExtra("Familiar", systemImage: "pawprint.fill") {
             MenuBarView()
                 .environment(petManager)
         }
@@ -823,7 +823,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
         window.isReleasedWhenClosed = false
-        window.title = "Desktop Pet Setup"
+        window.title = "Familiar Setup"
         window.contentView = NSHostingView(rootView: OnboardingView(onComplete: { [weak self] in
             window.close()
             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
@@ -853,7 +853,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 ```
 ┌─────────────────────────────┐
-│  Desktop Pet                │  <- pet name from XML header
+│  Familiar                │  <- pet name from XML header
 ├─────────────────────────────┤
 │  Add Pet              ⌘N    │
 │  Load Custom Pet...   ⌘O    │
@@ -987,11 +987,11 @@ ProcessInfo.processInfo.beginActivity(.userInitiated, reason: "Desktop pet anima
 ## 10. File Structure
 
 ```
-DesktopPet/
-├── DesktopPet.xcodeproj
-├── DesktopPet/
+Familiar/
+├── Familiar.xcodeproj
+├── Familiar/
 │   ├── App/
-│   │   ├── DesktopPetApp.swift
+│   │   ├── FamiliarApp.swift
 │   │   ├── AppDelegate.swift
 │   │   ├── PetManager.swift
 │   │   ├── AppSettings.swift
@@ -1036,7 +1036,7 @@ DesktopPet/
 │   └── Resources/
 │       └── animations.xml               # Bundled default sheep
 │
-├── DesktopPetTests/
+├── FamiliarTests/
 │   ├── Domain/
 │   │   ├── AnimationStateMachineTests.swift
 │   │   ├── TransitionPickerTests.swift
