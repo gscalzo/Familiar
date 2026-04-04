@@ -82,3 +82,39 @@ Key findings and fixes applied:
   - **Stop**: reminds to run checks before session end
 - Updated `CLAUDE.md` with mandatory session end protocol: run checks, fix failures, commit, update history
 - Auto-allow permissions for swiftlint, swiftformat, swift build/test, xcodebuild
+
+---
+
+## 2026-04-04 — Project Rename & Implementation Plan
+
+### User Request
+> "We are renaming the project from DesktopPet to Familiar. Before starting the plan, finish this conversion."
+> "Continue" (create implementation plan)
+
+### Actions — Rename
+- Renamed all references from `DesktopPet` → `Familiar`, `DesktopPetApp` → `FamiliarApp`, `DesktopPetTests` → `FamiliarTests`, `Desktop Pet` → `Familiar`
+- Updated: `CLAUDE.md`, `.swiftlint.yml`, `README.md`, `scripts/check.sh`, `docs/plans/2026-04-04-desktop-pet-design.md`, `docs/research.md`
+
+### Actions — Implementation Plan
+- Created `docs/plans/2026-04-04-implementation-plan.md` — 24-task TDD implementation plan across 6 phases:
+  1. Project scaffold & domain models (Tasks 1-3)
+  2. Domain engine with TDD (Tasks 4-8: Interpolator, ExpressionEvaluator, TransitionPicker, AnimationStateMachine)
+  3. Infrastructure layer (Tasks 9-12: SPM target, XML parser, sprite loader, environment detector)
+  4. Presentation layer (Tasks 13-17: Xcode project, PetPanel, PetInstance, menu bar, onboarding)
+  5. App layer wiring (Tasks 18-22: AppSettings, PetManager, AppDelegate, FamiliarApp, bundled XML)
+  6. Integration & polish (Tasks 23-24: smoke test, quality checks)
+
+---
+
+## 2026-04-04 — Task 1: Create SPM Package Structure
+
+### User Request
+> "Implement Task 1: Create SPM Package Structure"
+
+### Actions
+- Created `Package.swift` with `FamiliarDomain` library target (path: `Familiar/Domain`) and `FamiliarTests` test target (path: `FamiliarTests/Domain`)
+- Created `Familiar/Domain/Model/BorderType.swift` — `OptionSet` with `Sendable` conformance for Swift 6 strict concurrency
+- Created `FamiliarTests/Domain/BorderTypeTests.swift` — 2 tests using Swift Testing framework verifying OptionSet bit logic
+- Fixed `.swiftformat` config: `--sortimports` was renamed to `--importgrouping` in SwiftFormat v0.51
+- All quality checks pass (SwiftLint, SwiftFormat, build, tests)
+- Committed: `efc4395`
