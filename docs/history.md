@@ -118,3 +118,25 @@ Key findings and fixes applied:
 - Fixed `.swiftformat` config: `--sortimports` was renamed to `--importgrouping` in SwiftFormat v0.51
 - All quality checks pass (SwiftLint, SwiftFormat, build, tests)
 - Committed: `efc4395`
+
+---
+
+## 2026-04-04 — Task 2: Domain Models — Core Value Types
+
+### User Request
+> "Implement Task 2: Domain Models — Core Value Types"
+
+### Actions
+- Created 9 domain model files in `Familiar/Domain/Model/`:
+  - `Geometry.swift` — `Vec2` and `Rect` structs (domain-local replacements for CGPoint/CGRect)
+  - `SurfaceType.swift` — Enum for screen edges and window tops
+  - `WalkableSurface.swift` — Combines `Rect` + `SurfaceType`
+  - `Expression.swift` — Minimal stub with `raw`, `isDynamic`, `isScreenDependent` (to be expanded in Tasks 3/5)
+  - `NextAnim.swift` — Animation transition with probability and border constraint
+  - `Spawn.swift` — Child spawn definition with position expressions and next animations
+  - `ChildDefinition.swift` — Child pet definition with animation and position
+  - `PetHeader.swift` — Pet metadata (author, title, name, version, info)
+  - `SpriteSheetInfo.swift` — Sprite sheet tile dimensions
+- All types are `public` with `Sendable` conformance for Swift 6 strict concurrency
+- Zero framework imports — pure Swift domain layer
+- All quality checks pass (SwiftLint, SwiftFormat, build, tests)
