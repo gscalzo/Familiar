@@ -250,3 +250,49 @@ Key findings and fixes applied:
   - `parseBorderType` helper for `only` attribute mapping
   - `resetState` for parser reuse
 - All quality checks pass (SwiftLint, SwiftFormat, build, 63 tests passing)
+
+---
+
+## 2026-04-04 — Task 12: Environment Detector
+
+### User Request
+> Implement Task 12: EnvironmentDetector — Infrastructure layer class that detects screen edges and window positions for pets to walk on.
+
+### Decisions
+- No unit tests — depends on real system state (screen geometry, window list) which can't be meaningfully mocked
+- Split `detectSurfaces()` into `screenEdgeSurfaces()` and `windowTopSurfaces()` private helpers to stay under SwiftLint's 50-line function body limit
+- `registerOwnPanel`/`unregisterOwnPanel` methods allow excluding the pet's own panels from window detection
+- Coordinate conversion via `toNSCoords()` handles CoreGraphics (top-left origin) to AppKit (bottom-left origin) translation
+- Screen Recording permission check: if any window name is readable, permission is granted
+
+### What Was Done
+- Created `Familiar/Infrastructure/EnvironmentDetector.swift`:
+  - Implements `EnvironmentDetecting` domain protocol
+  - `detectSurfaces()` returns screen edge surfaces (bottom/left/right/top for each screen) plus window top edges (when Screen Recording permission is available)
+  - `isFullScreenActive()` checks if frontmost app has a window covering the full screen
+  - `currentScreenFrame()` / `currentVisibleFrame()` return main screen geometry as domain `Rect`
+  - `hasAdjacentScreen(at:)` checks for multi-monitor setups
+  - `detectScreenEdgesOnly()` convenience method filters out window surfaces
+- All quality checks pass (SwiftLint, SwiftFormat, build)
+
+---
+
+## 2026-04-04 — Task 11: Sprite Sheet Loader (TDD)
+
+**Request:** Implement `SpriteSheetLoader` that decodes a base64 PNG sprite sheet into individual frames, conforming to the `SpriteProviding` domain protocol.
+
+**Decisions:**
+- Used TDD approach: wrote tests first, verified they failed, then wrote implementation
+- Created test PNG programmatically using `NSBitmapImageRep` with exact pixel dimensions (not `NSImage(size:)`) to avoid Retina scaling issues in CI/test environments
+- Stored tile dimensions as pixel integers from CGImage (not NSImage point-based size) for accurate `frameWidth`/`frameHeight`
+- `image(at:)` is Infrastructure-only (not part of the domain protocol), used by Presentation layer with concrete type
+
+**What was done:**
+- Created `Familiar/Infrastructure/SpriteSheetLoader.swift`:
+  - Decodes base64 string to PNG data, then slices into grid of frames (row by row, left to right, top to bottom)
+  - Supports horizontal flip with lazy caching (`flippedFramesCache`)
+  - Clamps out-of-bounds frame indices
+  - Throws `SpriteSheetError.invalidBase64` or `.invalidImage` on bad input
+- Created `FamiliarTests/Infrastructure/SpriteSheetLoaderTests.swift` with 7 tests:
+  - Frame count, dimensions, flip toggle, valid/invalid index access, invalid base64, single tile
+- All 70 tests pass, all quality checks pass
