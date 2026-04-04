@@ -10,13 +10,13 @@ public struct AnimationConfig: Codable, Sendable {
     public static let `default` = AnimationConfig(
         moods: [
             "chill": ["walk"],
-            "think": ["sleep 1a", "sleep 2a"],
+            "think": ["sleep1a", "sleep2a"],
             "work": ["run"],
             "wait": ["eat"],
-            "sleep": ["sleep 3a"],
+            "sleep": ["sleep3a"],
         ],
         events: [
-            "yay": ["bath a"],
+            "yay": ["batha"],
             "oops": ["fall"],
             "hmm": ["boing"],
             "go": ["jump"],
