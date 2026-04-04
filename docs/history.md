@@ -429,3 +429,45 @@ Add `setMoodAnimation` and `playEventAnimation` methods to AnimationStateMachine
 - Modified `handleSequenceComplete` with event-return and mood-fallback logic
 - All 83 tests pass; `./scripts/check.sh` all green
 - Committed: `feat: add mood and event animation support to AnimationStateMachine`
+
+---
+
+## 2026-04-04 — Task 2: AnimationMapper (TDD)
+
+### Prompt
+Create AnimationMapper — a pure domain enum that resolves mood/event names to eSheep animation IDs using an AnimationConfig.
+
+### Decisions
+- Pure enum with static methods, no state — fits domain layer (zero framework imports)
+- `resolve(mood:)` falls back to "chill" mood if unknown, then to "walk" as last resort
+- `resolveEvent(event:)` returns nil for unknown events (callers decide what to do)
+- Used `guard let name = names.randomElement()` instead of force-unwrap to satisfy SwiftLint
+
+### Actions
+- Created `FamiliarTests/Domain/AnimationMapperTests.swift` (5 tests: mood resolve, multiple options, unknown fallback, event resolve, unknown event nil)
+- Verified tests failed before implementation (AnimationMapper not found)
+- Created `Familiar/Domain/Engine/AnimationMapper.swift`
+- All 83 tests pass; `./scripts/check.sh` all green
+- Committed: `feat: add AnimationMapper resolving mood/event names to animation IDs`
+
+---
+
+## 2026-04-04 — Task 5: fam CLI executable
+
+### User Request
+> Implement the `fam` CLI tool that reads/writes `~/.familiar/state.json` to control desktop pets. Create `Tools/fam/main.swift` and add the executable target to `Package.swift`.
+
+### Decisions
+- CLI has zero dependencies on FamiliarDomain/FamiliarInfrastructure — defines its own minimal PetState struct for JSON encoding
+- Supports moods (persistent: chill, think, work, wait, sleep), events (one-shot: yay, oops, hmm, go, done), lifecycle (kill, kill --all), and status (list all pets)
+- Named pets auto-created on first command; "default" used when no name specified
+- State stored in `~/.familiar/state.json` with pretty-printed sorted-keys JSON
+
+### Actions
+- Added `.executableTarget(name: "fam", path: "Tools/fam")` to `Package.swift`
+- Created `Tools/fam/main.swift` (~120 lines, Foundation only)
+- `swift build` succeeds for both FamiliarApp and fam targets
+- All 91 existing tests pass
+- Manual tested: status, mood set, event fire, named pets, kill
+- `./scripts/check.sh` all green
+- Committed: `feat: add fam CLI for controlling pet moods and events`
