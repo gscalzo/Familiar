@@ -9,6 +9,10 @@ public struct Expression: Sendable {
         self.isScreenDependent = isScreenDependent
     }
 
+    public func evaluate(context: ExpressionContext) -> Int {
+        ExpressionEvaluator.evaluate(raw, context: context)
+    }
+
     public static func constant(_ value: Int) -> Expression {
         Expression(raw: "\(value)", isDynamic: false, isScreenDependent: false)
     }
