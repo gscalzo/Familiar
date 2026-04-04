@@ -214,3 +214,39 @@ Key findings and fixes applied:
   9. `tickReportsMovement` — verifies dx/dy reported when non-zero
   10. `respawnWithNoSpawnsDoesNotCrash` — verifies empty spawns handled gracefully
 - All quality checks pass (SwiftLint, SwiftFormat, build, 54 tests passing)
+
+---
+
+## 2026-04-04 — Task 10: XML Animation Parser (TDD)
+
+### User Request
+> Implement Task 10: XML Animation Parser — create an XML parser that reads eSheep XML animation format and produces domain model types.
+
+### Decisions
+- Used Foundation's `XMLParser` with delegate pattern (path-tracking approach)
+- Fully qualified `FamiliarDomain.Expression` to avoid ambiguity with Foundation.Expression on macOS 15+
+- Parser returns `(PetAnimationData, String)` tuple — domain data + raw base64 PNG string
+- Border type mapping from `only` attribute: "0"/empty -> .none, "1" -> .taskbar, "2" -> .window, "4" -> .horizontal, "6" -> .horizontalPlus, "8" -> .vertical
+- Expression creation: isDynamic from "random"/"randS"/"imageX"/"imageY", isScreenDependent from "screenW"/"screenH"/"areaW"/"areaH"
+- `@unchecked Sendable` on parser class since it's stateful but used synchronously
+
+### What Was Done
+- Deleted `Familiar/Infrastructure/Placeholder.swift` and `FamiliarTests/Infrastructure/PlaceholderTests.swift`
+- Created `FamiliarTests/Infrastructure/XMLAnimationParserTests.swift` — 9 tests with inline XML:
+  1. `parsesHeader` — verifies petName, author, title, version, info
+  2. `parsesSpriteInfo` — verifies tilesX/tilesY
+  3. `extractsBase64PNG` — verifies base64 PNG extraction from CDATA
+  4. `parsesSpawns` — verifies spawn id, probability, expressions, next animations
+  5. `parsesAnimations` — verifies 2 animations with frames, repeatFrom, endAnimation transitions
+  6. `parsesMovementExpressions` — verifies start/end movement expression values and opacity
+  7. `parsesBorderAndGravity` — verifies border types (.horizontal, .window) and gravity transitions
+  8. `invalidXMLThrows` — verifies XMLParseError on invalid input
+  9. `emptyDataThrows` — verifies XMLParseError on empty data
+- Created `Familiar/Infrastructure/XMLAnimationParser.swift`:
+  - `XMLParseError` enum with `invalidFormat` and `missingElement` cases
+  - `XMLAnimationParser` class implementing `XMLParserDelegate` with path-tracking approach
+  - Parses header, image, spawns, animations (with start/end movements, sequence, border, gravity), and children
+  - `makeExpression` helper for dynamic/screen-dependent detection
+  - `parseBorderType` helper for `only` attribute mapping
+  - `resetState` for parser reuse
+- All quality checks pass (SwiftLint, SwiftFormat, build, 63 tests passing)
