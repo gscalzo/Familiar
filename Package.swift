@@ -6,16 +6,27 @@ let package = Package(
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "FamiliarDomain", targets: ["FamiliarDomain"]),
+        .library(name: "FamiliarInfrastructure", targets: ["FamiliarInfrastructure"]),
     ],
     targets: [
         .target(
             name: "FamiliarDomain",
             path: "Familiar/Domain"
         ),
+        .target(
+            name: "FamiliarInfrastructure",
+            dependencies: ["FamiliarDomain"],
+            path: "Familiar/Infrastructure"
+        ),
         .testTarget(
             name: "FamiliarTests",
             dependencies: ["FamiliarDomain"],
             path: "FamiliarTests/Domain"
+        ),
+        .testTarget(
+            name: "FamiliarInfrastructureTests",
+            dependencies: ["FamiliarInfrastructure", "FamiliarDomain"],
+            path: "FamiliarTests/Infrastructure"
         ),
     ]
 )
