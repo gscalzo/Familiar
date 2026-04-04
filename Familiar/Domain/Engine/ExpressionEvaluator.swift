@@ -95,7 +95,7 @@ private struct Parser {
     private mutating func parseNumber() -> Int {
         var value = 0
         while let ch = peek(), ch.isNumber {
-            value = value * 10 + ch.wholeNumberValue!
+            value = value * 10 + (ch.wholeNumberValue ?? 0)
             pos += 1
         }
         return value
@@ -110,6 +110,7 @@ private struct Parser {
         return name
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func lookupVariable(_ name: String) -> Int {
         switch name {
         case "screenW": context.screenW
