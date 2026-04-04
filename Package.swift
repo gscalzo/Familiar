@@ -18,6 +18,11 @@ let package = Package(
             dependencies: ["FamiliarDomain"],
             path: "Familiar/Infrastructure"
         ),
+        .executableTarget(
+            name: "FamiliarApp",
+            dependencies: ["FamiliarDomain", "FamiliarInfrastructure"],
+            path: "Familiar/App"
+        ),
         .testTarget(
             name: "FamiliarTests",
             dependencies: ["FamiliarDomain"],

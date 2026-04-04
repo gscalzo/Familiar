@@ -296,3 +296,33 @@ Key findings and fixes applied:
 - Created `FamiliarTests/Infrastructure/SpriteSheetLoaderTests.swift` with 7 tests:
   - Frame count, dimensions, flip toggle, valid/invalid index access, invalid base64, single tile
 - All 70 tests pass, all quality checks pass
+
+---
+
+## 2026-04-04 — Tasks 13-21: Presentation and App Layers
+
+### User Request
+> Implement the Presentation and App layers (Tasks 13-21): create SPM executable target, PetPanel, PetInstance, PetManager, MenuBarView, OnboardingView, AppSettings, AppDelegate, and FamiliarApp entry point.
+
+### Decisions
+- Used SPM `executableTarget` instead of Xcode project for simplicity and CI compatibility
+- Used `NSApp.setActivationPolicy(.accessory)` for LSUIElement behavior instead of Info.plist (SPM has no Info.plist support)
+- `Bundle.main` for resource loading (no `Bundle.module` since no SPM resources declared yet)
+- `@Observable` for PetManager state management, passed via SwiftUI `.environment()`
+- `nonisolated` + `MainActor.assumeIsolated` on `AnimationStateMachineDelegate` conformance (delegate is not `@MainActor`-annotated but always called from main actor context)
+- Single shared `DispatchSourceTimer` at 50ms interval for all pets
+- `PetPanel` starts with `ignoresMouseEvents = true`, toggled on mouse enter/exit for interaction
+- Skipped About and Options views for now — keeping menu simple
+- `UniformTypeIdentifiers` import for `UTType.xml` in file open dialog
+
+### What Was Done
+- Updated `Package.swift`: added `FamiliarApp` executable target depending on Domain + Infrastructure
+- Created `Familiar/App/FamiliarApp.swift` — `@main` entry point with `MenuBarExtra` and `.menuBarExtraStyle(.window)`
+- Created `Familiar/App/AppDelegate.swift` — sets accessory activation policy, prevents App Nap, handles onboarding flow, loads default pet XML
+- Created `Familiar/App/PetManager.swift` — `@Observable` manager handling XML loading, pet lifecycle (add/remove/removeAll), shared timer, expression context building, fullscreen detection
+- Created `Familiar/App/AppSettings.swift` — `@Observable` singleton wrapping UserDefaults for multiScreen and windowWalking settings
+- Created `Familiar/App/Presentation/PetPanel.swift` — borderless `NSPanel` with transparent background, mouse drag support, right-click context menu, status bar level
+- Created `Familiar/App/Presentation/PetInstance.swift` — pet entity linking panel + state machine + sprite sheet, implements `AnimationStateMachineDelegate`
+- Created `Familiar/App/Presentation/MenuBarView.swift` — SwiftUI menu with pet list, add/remove/pause/reset/quit actions, custom XML file loading
+- Created `Familiar/App/Presentation/OnboardingView.swift` — Screen Recording permission request UI
+- Build succeeds, all 70 existing tests pass, all quality checks pass
