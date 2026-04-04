@@ -143,6 +143,22 @@ public final class AnimationStateMachine {
         }
     }
 
+    public func handleBorderHit(type: BorderType) {
+        guard let anim = animations[currentAnimationID] else { return }
+        if let nextId = TransitionPicker.pick(from: anim.endBorder, context: type) {
+            setAnimation(nextId)
+        }
+    }
+
+    public func handleGravityLost() {
+        guard let anim = animations[currentAnimationID] else { return }
+        if let nextId = TransitionPicker.pick(from: anim.endGravity, context: .none) {
+            setAnimation(nextId)
+        } else if let fallId = fallAnimationID {
+            setAnimation(fallId)
+        }
+    }
+
     public func handleKill() {
         if let killID = killAnimationID {
             setAnimation(killID)

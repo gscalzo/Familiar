@@ -260,27 +260,46 @@ final class PetManager {
     }
 
     private func checkBounds(_ pet: PetInstance) {
-        // Get the union of all screen frames
         let screens = NSScreen.screens
         guard !screens.isEmpty else { return }
 
         let pos = pet.position
-        let size = CGFloat(pet.spriteSheet.frameWidth)
+        let petW = CGFloat(pet.spriteSheet.frameWidth)
+        let petH = CGFloat(pet.spriteSheet.frameHeight)
 
-        // Check if pet is completely off all screens (with margin)
-        let margin: CGFloat = size * 2
-        let isOffScreen = !screens.contains { screen in
-            let f = screen.frame
-            let expanded = NSRect(
-                x: f.minX - margin, y: f.minY - margin,
-                width: f.width + margin * 2, height: f.height + margin * 2
-            )
-            return expanded.contains(pos)
+        // Find which screen the pet is on (or closest to)
+        let screen = screens.min(by: { screenA, screenB in
+            screenA.frame.distance(to: pos) < screenB.frame.distance(to: pos)
+        })?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+
+        // Determine current surface
+        if abs(pos.y - screen.minY) < 3 {
+            pet.currentSurface = .screenBottom
+        } else {
+            pet.currentSurface = nil
         }
 
-        if isOffScreen {
-            // Respawn at center of main screen
-            let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        // Check screen edge collisions
+        if pos.x <= screen.minX {
+            // Hit left edge
+            pet.position.x = screen.minX
+            pet.panel.setFrameOrigin(pet.position)
+            pet.stateMachine.handleBorderHit(type: .vertical)
+        } else if pos.x + petW >= screen.maxX {
+            // Hit right edge
+            pet.position.x = screen.maxX - petW
+            pet.panel.setFrameOrigin(pet.position)
+            pet.stateMachine.handleBorderHit(type: .vertical)
+        }
+
+        // Keep on screen bottom (gravity placeholder)
+        if pos.y < screen.minY {
+            pet.position.y = screen.minY
+            pet.panel.setFrameOrigin(pet.position)
+        }
+
+        // Fallen off bottom somehow — respawn
+        if pos.y < screen.minY - petH * 3 {
             pet.position = CGPoint(x: screen.midX, y: screen.minY)
             pet.panel.setFrameOrigin(pet.position)
             pet.stateMachine.respawn()
@@ -309,4 +328,12 @@ final class PetManager {
         imageW: 64, imageH: 64, imageX: 0, imageY: 0,
         random: 50, randS: 50, scale: 2
     )
+}
+
+private extension NSRect {
+    func distance(to point: CGPoint) -> CGFloat {
+        let dx = max(minX - point.x, 0, point.x - maxX)
+        let dy = max(minY - point.y, 0, point.y - maxY)
+        return sqrt(dx * dx + dy * dy)
+    }
 }
