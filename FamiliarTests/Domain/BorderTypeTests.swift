@@ -16,5 +16,6 @@ struct BorderTypeTests {
         #expect(hp.contains(.horizontal))
         #expect(hp.contains(.window))
         #expect(!hp.contains(.taskbar))
+        #expect(!hp.contains(.vertical))
     }
 }
