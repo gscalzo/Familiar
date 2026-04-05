@@ -318,8 +318,15 @@ final class PetManager {
         }
 
         // Determine current surface
+        let wasInAir = pet.currentSurface == nil
         if abs(pet.position.y - visibleBottom) < 5 {
             pet.currentSurface = .screenBottom
+            // Just landed — trigger border hit so fall transitions to landing animation
+            if wasInAir {
+                pet.position.y = visibleBottom
+                pet.panel.setFrameOrigin(pet.position)
+                pet.stateMachine.handleBorderHit(type: .taskbar)
+            }
         } else {
             pet.currentSurface = nil
         }
