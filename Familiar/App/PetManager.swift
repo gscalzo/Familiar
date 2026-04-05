@@ -290,14 +290,23 @@ final class PetManager {
         }
 
         // Check edges — only when moving TOWARD the edge
-        if pos.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
+        // Border type reflects the surface the pet is ON, not the edge it hit
+        let surfaceBorderType: BorderType = switch pet.currentSurface {
+        case .screenBottom: .taskbar
+        case .screenLeft, .screenRight: .vertical
+        case .screenTop: .horizontal
+        case .windowTop: .window
+        case nil: .none
+        }
+
+        if pet.position.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
             pet.position.x = totalBounds.minX
             pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.handleBorderHit(type: .vertical)
-        } else if pos.x + petW >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
+            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
+        } else if pet.position.x + petW >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
             pet.position.x = totalBounds.maxX - petW
             pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.handleBorderHit(type: .vertical)
+            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
         }
 
         // Keep on screen bottom
