@@ -15,7 +15,7 @@ struct AboutView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
-            Text("A macOS desktop pet inspired by eSheep (1995).")
+            Text("A macOS desktop pet\ninspired by eSheep (1995)")
                 .multilineTextAlignment(.center)
 
             Text("By Giordano Scalzo")
