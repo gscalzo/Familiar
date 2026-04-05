@@ -110,23 +110,29 @@ public final class AnimationStateMachine {
     }
 
     public func respawn() {
-        guard let selectedSpawn = pickWeightedSpawn() else {
-            // No weighted spawn available — fall back to first animation
-            if let firstId = animations.keys.sorted().first {
-                setAnimation(firstId)
-            }
-            delegate?.stateMachineDidRequestRespawn(self)
-            return
+        var animId: Int?
+        if let spawn = pickWeightedSpawn() {
+            animId = TransitionPicker.pick(from: spawn.nextAnimations, context: .none)
         }
-
-        if let nextId = TransitionPicker.pick(from: selectedSpawn.nextAnimations, context: .none) {
-            setAnimation(nextId)
-        } else if let firstId = animations.keys.sorted().first {
-            // Spawn's next has probability 0 — fall back to first animation
-            setAnimation(firstId)
-        }
-
+        setAnimation(animId ?? findBestStartAnimation())
         delegate?.stateMachineDidRequestRespawn(self)
+    }
+
+    private func findBestStartAnimation() -> Int {
+        // Prefer "walk" animation, then first with non-zero x movement, then first by ID
+        let walkNames = ["walk", "idle", "walk1", "run"]
+        for name in walkNames {
+            if let id = animations.values.first(where: { $0.name == name })?.id {
+                return id
+            }
+        }
+        // Find first animation with horizontal movement
+        if let id = animations.values.first(where: {
+            $0.start.x.raw != "0" && $0.start.y.raw == "0"
+        })?.id {
+            return id
+        }
+        return animations.keys.sorted().first ?? 0
     }
 
     private func pickWeightedSpawn() -> Spawn? {
