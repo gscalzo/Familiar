@@ -1,11 +1,13 @@
 #!/usr/bin/env swift
 import Foundation
 
-guard CommandLine.arguments.count == 3,
+// Usage: collect-metrics.swift <tests> <coverage> [code-metrics-json-path]
+
+guard CommandLine.arguments.count >= 3,
       let tests = Int(CommandLine.arguments[1]),
       let coverage = Double(CommandLine.arguments[2])
 else {
-    fputs("Usage: collect-metrics.swift <test_count> <coverage_pct>\n", stderr)
+    fputs("Usage: collect-metrics.swift <test_count> <coverage_pct> [code-metrics-json]\n", stderr)
     exit(1)
 }
 
@@ -13,6 +15,9 @@ struct MetricEntry: Codable {
     let date: String
     let tests: Int
     let coverage: Double
+    var loc: Int?
+    var methods: Int?
+    var classes: Int?
 }
 
 let formatter = DateFormatter()
@@ -24,28 +29,50 @@ let projectRoot = scriptDir.deletingLastPathComponent()
 let metricsDir = projectRoot.appendingPathComponent("docs/metrics")
 let historyURL = metricsDir.appendingPathComponent("history.json")
 
-// Ensure directory exists
 try FileManager.default.createDirectory(at: metricsDir, withIntermediateDirectories: true)
 
-// Read existing entries or start fresh
 var entries: [MetricEntry] = []
 if let data = try? Data(contentsOf: historyURL) {
     entries = (try? JSONDecoder().decode([MetricEntry].self, from: data)) ?? []
 }
 
-// Replace existing entry for today, or append
 let roundedCoverage = (coverage * 100).rounded() / 100
-let newEntry = MetricEntry(date: date, tests: tests, coverage: roundedCoverage)
+var newEntry = MetricEntry(date: date, tests: tests, coverage: roundedCoverage)
+
+// Parse code metrics from swift-code-metrics output if provided
+if CommandLine.arguments.count >= 4 {
+    let metricsPath = CommandLine.arguments[3]
+    if let data = try? Data(contentsOf: URL(fileURLWithPath: metricsPath)),
+       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+       let frameworks = json["non-test-frameworks"] as? [[String: Any]]
+    {
+        var totalLoc = 0
+        var totalMethods = 0
+        var totalClasses = 0
+        for fw in frameworks {
+            for (_, metrics) in fw {
+                guard let m = metrics as? [String: Any] else { continue }
+                totalLoc += m["loc"] as? Int ?? 0
+                totalMethods += m["nom"] as? Int ?? 0
+                totalClasses += m["n_c"] as? Int ?? 0
+            }
+        }
+        newEntry.loc = totalLoc
+        newEntry.methods = totalMethods
+        newEntry.classes = totalClasses
+    }
+}
+
 if let index = entries.lastIndex(where: { $0.date == date }) {
     entries[index] = newEntry
 } else {
     entries.append(newEntry)
 }
 
-// Write back
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 let json = try encoder.encode(entries)
 try json.write(to: historyURL)
 
-print("Metrics recorded: \(date) — \(tests) tests, \(roundedCoverage)% coverage")
+let locInfo = newEntry.loc.map { ", \($0) LOC, \(newEntry.methods ?? 0) methods" } ?? ""
+print("Metrics recorded: \(date) — \(tests) tests, \(roundedCoverage)% coverage\(locInfo)")

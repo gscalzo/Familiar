@@ -5,8 +5,11 @@
     "tests" : 91
   },
   {
+    "classes" : 32,
     "coverage" : 85.93,
     "date" : "2026-04-05",
+    "loc" : 1978,
+    "methods" : 139,
     "tests" : 91
   }
 ]

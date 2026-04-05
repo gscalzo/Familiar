@@ -133,11 +133,26 @@
                 <div class="stat-label">Coverage</div>
                 <div class="stat-delta" id="delta-coverage"></div>
             </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-loc" style="color: #c084fc;">—</div>
+                <div class="stat-label">LOC</div>
+                <div class="stat-delta" id="delta-loc"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-methods" style="color: #fb923c;">—</div>
+                <div class="stat-label">Methods</div>
+                <div class="stat-delta" id="delta-methods"></div>
+            </div>
         </div>
 
         <div class="chart-card">
             <div class="chart-title">Tests & Coverage over time</div>
             <canvas id="chart" height="280"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Codebase size over time</div>
+            <canvas id="codeChart" height="240"></canvas>
         </div>
 
         <p class="updated" id="updated"></p>
@@ -169,6 +184,12 @@
                 document.getElementById('stat-tests').textContent = latest.tests;
                 document.getElementById('stat-coverage').textContent = latest.coverage + '%';
 
+                // Code metrics stats
+                if (latest.loc != null) {
+                    document.getElementById('stat-loc').textContent = latest.loc;
+                    document.getElementById('stat-methods').textContent = latest.methods;
+                }
+
                 // Deltas
                 if (data.length > 1) {
                     const prev = data[data.length - 2];
@@ -176,6 +197,10 @@
                     const dc = Math.round((latest.coverage - prev.coverage) * 100) / 100;
                     setDelta('delta-tests', dt, '');
                     setDelta('delta-coverage', dc, '%');
+                    if (latest.loc != null && prev.loc != null) {
+                        setDelta('delta-loc', latest.loc - prev.loc, '');
+                        setDelta('delta-methods', latest.methods - prev.methods, '');
+                    }
                 }
 
                 // Updated timestamp
@@ -298,6 +323,92 @@
                         }
                     }
                 });
+                // Codebase size chart (only if LOC data exists)
+                const locData = data.filter(d => d.loc != null);
+                if (locData.length > 0) {
+                    new Chart(document.getElementById('codeChart'), {
+                        type: 'line',
+                        data: {
+                            labels: locData.map(d => d.date),
+                            datasets: [
+                                {
+                                    label: 'LOC',
+                                    data: locData.map(d => d.loc),
+                                    borderColor: '#c084fc',
+                                    backgroundColor: 'rgba(192, 132, 252, 0.08)',
+                                    fill: true,
+                                    tension: 0.35,
+                                    pointRadius: 5,
+                                    pointBackgroundColor: '#c084fc',
+                                    pointBorderColor: '#0a0a0f',
+                                    pointBorderWidth: 2,
+                                    borderWidth: 2.5,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'Methods',
+                                    data: locData.map(d => d.methods),
+                                    borderColor: '#fb923c',
+                                    backgroundColor: 'rgba(251, 146, 60, 0.08)',
+                                    fill: true,
+                                    tension: 0.35,
+                                    pointRadius: 5,
+                                    pointBackgroundColor: '#fb923c',
+                                    pointBorderColor: '#0a0a0f',
+                                    pointBorderWidth: 2,
+                                    borderWidth: 2.5,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#9090a8',
+                                        font: { family: 'Inter', size: 12 },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 20
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#1a1a28',
+                                    borderColor: '#2a2a3d',
+                                    borderWidth: 1,
+                                    titleColor: '#e0e0e8',
+                                    bodyColor: '#9090a8',
+                                    padding: 12,
+                                    cornerRadius: 8
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#4a4a5d', font: { family: 'Inter', size: 11 } },
+                                    grid: { color: '#1a1a28' }
+                                },
+                                y: {
+                                    position: 'left',
+                                    title: { display: true, text: 'LOC', color: '#c084fc', font: { family: 'Inter', size: 11 } },
+                                    ticks: { color: '#c084fc', font: { family: 'Inter', size: 11 } },
+                                    grid: { color: '#1a1a28' },
+                                    beginAtZero: true
+                                },
+                                y1: {
+                                    position: 'right',
+                                    title: { display: true, text: 'Methods', color: '#fb923c', font: { family: 'Inter', size: 11 } },
+                                    ticks: { color: '#fb923c', font: { family: 'Inter', size: 11 } },
+                                    grid: { drawOnChartArea: false },
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('codeChart').parentElement.style.display = 'none';
+                }
             })
             .catch(() => {
                 document.getElementById('empty-msg').style.display = 'block';
