@@ -1,4 +1,4 @@
-public enum SurfaceType: Sendable {
+public enum SurfaceType: Equatable, Sendable {
     case screenBottom
     case screenLeft
     case screenRight

@@ -270,12 +270,27 @@ final class PetManager {
         // Union of all screen frames — the total desktop area
         let totalBounds = screens.reduce(screens[0].frame) { $0.union($1.frame) }
 
-        // Find the screen the pet is currently on for surface detection
-        let currentScreen = screens.first(where: { $0.frame.contains(pos) })
+        // Find which screen the pet is on
+        let screenIndex = screens.firstIndex(where: { $0.frame.contains(pos) })
+            ?? screens.firstIndex(where: {
+                // Check if pet is just past the edge between screens
+                let expanded = $0.frame.insetBy(dx: -petW, dy: -petH)
+                return expanded.contains(pos)
+            })
+        let currentScreen = screenIndex.map { screens[$0] }
         let visibleBottom = currentScreen?.visibleFrame.minY ?? totalBounds.minY
 
+        // Snap to new screen's bottom when crossing screens
+        if let idx = screenIndex, idx != pet.currentScreenIndex {
+            if pet.currentSurface == .screenBottom {
+                pet.position.y = visibleBottom
+                pet.panel.setFrameOrigin(pet.position)
+            }
+            pet.currentScreenIndex = idx
+        }
+
         // Determine current surface
-        if abs(pos.y - visibleBottom) < 3 {
+        if abs(pet.position.y - visibleBottom) < 3 {
             pet.currentSurface = .screenBottom
         } else {
             pet.currentSurface = nil

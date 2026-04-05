@@ -12,6 +12,7 @@ final class PetInstance: Identifiable {
 
     var position: CGPoint = .zero
     var currentSurface: SurfaceType?
+    var currentScreenIndex: Int = -1
 
     init(
         panel: PetPanel,
