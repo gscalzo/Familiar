@@ -267,12 +267,12 @@ final class PetManager {
             let elapsed = (now - pet.lastTickTime) * 1000 // ms
             if elapsed >= Double(pet.currentInterval) {
                 pet.lastTickTime = now
-                if !pet.stateMachine.isDragging {
-                    pet.stateMachine.tick(currentSurface: pet.currentSurface)
-                }
+                // Skip everything while being dragged
+                if pet.stateMachine.isDragging { continue }
+
+                pet.stateMachine.tick(currentSurface: pet.currentSurface)
                 if pet.isBeingKilled {
                     pet.killTickCount += 1
-                    // Manually fade out over ~20 ticks
                     let opacity = max(0, 1.0 - Double(pet.killTickCount) / 20.0)
                     pet.panel.alphaValue = opacity
                     if opacity <= 0 {

@@ -30,10 +30,12 @@ final class PetInstance: Identifiable {
         self.name = name
 
         panel.onDragStart = { [weak self] in
+            self?.currentSurface = nil
             self?.stateMachine.handleDragStart()
         }
         panel.onDragEnd = { [weak self] point in
             self?.position = point
+            self?.currentSurface = nil
             self?.stateMachine.handleDragEnd()
         }
         panel.onRemove = { [weak self] in
