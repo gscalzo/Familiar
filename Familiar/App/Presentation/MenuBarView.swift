@@ -7,10 +7,10 @@ struct MenuBarView: View {
     @Environment(PetManager.self) private var petManager
 
     var body: some View {
-        Menu("Choose Pet") {
+        Menu("Add Pet") {
             ForEach(AppDelegate.availablePets(), id: \.self) { name in
                 Button(petDisplayName(name)) {
-                    petManager.switchPet(named: name)
+                    petManager.addPetOfType(named: name)
                 }
             }
             Divider()
@@ -18,14 +18,11 @@ struct MenuBarView: View {
                 .keyboardShortcut("o")
         }
 
-        Button("Add Pet") { petManager.addPet() }
-            .keyboardShortcut("n")
-
         Divider()
 
         if !petManager.activePets.isEmpty {
             ForEach(Array(petManager.activePets.enumerated()), id: \.element.id) { index, pet in
-                Button("Remove \(petManager.loadedPetData?.header.petName ?? "Pet") #\(index + 1)") {
+                Button("Remove \(pet.petTypeName) #\(index + 1)") {
                     petManager.removePet(id: pet.id)
                 }
             }

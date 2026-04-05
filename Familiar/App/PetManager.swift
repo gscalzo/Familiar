@@ -39,19 +39,22 @@ final class PetManager {
         spriteSheetBase64 = base64PNG
     }
 
-    func switchPet(named name: String) {
-        guard let url = AppDelegate.findPetXML(named: name),
+    func addPetOfType(named typeName: String) {
+        guard let url = AppDelegate.findPetXML(named: typeName),
               let data = try? Data(contentsOf: url)
         else { return }
-        removeAll()
-        try? loadXML(from: data)
-        UserDefaults.standard.set(name, forKey: "lastPetName")
-        addPet()
-        NSLog("[Familiar] Switched to pet: \(name)")
-    }
+        let parser = XMLAnimationParser()
+        guard let (petData, base64PNG) = try? parser.parse(data) else { return }
+        guard let pet = makePetInstance(
+            petData: petData, base64PNG: base64PNG, name: nil
+        ) else { return }
 
-    var currentPetName: String {
-        loadedPetData?.header.petName ?? "eSheep"
+        pet.petTypeName = petData.header.petName
+        pet.stateMachine.respawn()
+        pet.spriteSheet.setFlipped(!pet.stateMachine.isMovingLeft)
+        placeOnScreenBottom(pet)
+        showPet(pet)
+        NSLog("[Familiar] Added pet of type: \(typeName)")
     }
 
     // MARK: - Pet Lifecycle
@@ -195,13 +198,17 @@ final class PetManager {
     // MARK: - Pet Factory
 
     private func makePetInstance(name: String? = nil) -> PetInstance? {
-        guard activePets.count < maxPets,
-              let petData = loadedPetData,
-              let base64 = spriteSheetBase64
-        else { return nil }
+        guard let petData = loadedPetData, let base64 = spriteSheetBase64 else { return nil }
+        return makePetInstance(petData: petData, base64PNG: base64, name: name)
+    }
+
+    private func makePetInstance(
+        petData: PetAnimationData, base64PNG: String, name: String?
+    ) -> PetInstance? {
+        guard activePets.count < maxPets else { return nil }
 
         guard let spriteSheet = try? SpriteSheetLoader(
-            base64PNG: base64,
+            base64PNG: base64PNG,
             tilesX: petData.spriteInfo.tilesX,
             tilesY: petData.spriteInfo.tilesY
         ) else { return nil }

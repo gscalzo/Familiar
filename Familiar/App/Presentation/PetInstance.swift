@@ -9,6 +9,7 @@ final class PetInstance: Identifiable {
     let stateMachine: AnimationStateMachine
     let spriteSheet: SpriteSheetLoader
     var name: String?
+    var petTypeName: String = "eSheep"
 
     var position: CGPoint = .zero
     var currentSurface: SurfaceType?
