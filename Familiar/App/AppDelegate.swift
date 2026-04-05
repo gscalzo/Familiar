@@ -78,16 +78,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     static func findPetXML(named name: String) -> URL? {
-        Bundle.module.url(forResource: name, withExtension: "xml", subdirectory: "Pets")
-            ?? Bundle.main.url(forResource: name, withExtension: "xml", subdirectory: "Pets")
+        Bundle.module.url(forResource: name, withExtension: "xml")
+            ?? Bundle.main.url(forResource: name, withExtension: "xml")
     }
 
     static func availablePets() -> [String] {
-        guard let petsURL = Bundle.module.url(forResource: "Pets", withExtension: nil)
-            ?? Bundle.main.url(forResource: "Pets", withExtension: nil)
-        else { return [] }
+        // SPM flattens resources — all XMLs are at bundle root
+        let bundle = Bundle.module
+        guard let bundlePath = bundle.resourceURL else { return [] }
         let files = (try? FileManager.default.contentsOfDirectory(
-            at: petsURL, includingPropertiesForKeys: nil
+            at: bundlePath, includingPropertiesForKeys: nil
         )) ?? []
         return files
             .filter { $0.pathExtension == "xml" }
