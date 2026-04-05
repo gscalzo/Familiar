@@ -267,7 +267,9 @@ final class PetManager {
             let elapsed = (now - pet.lastTickTime) * 1000 // ms
             if elapsed >= Double(pet.currentInterval) {
                 pet.lastTickTime = now
-                pet.stateMachine.tick(currentSurface: pet.currentSurface)
+                if !pet.stateMachine.isDragging {
+                    pet.stateMachine.tick(currentSurface: pet.currentSurface)
+                }
                 if pet.isBeingKilled {
                     pet.killTickCount += 1
                     // Manually fade out over ~20 ticks

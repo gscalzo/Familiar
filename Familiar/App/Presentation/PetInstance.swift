@@ -55,6 +55,8 @@ extension PetInstance: AnimationStateMachineDelegate {
 
     nonisolated func stateMachine(_: AnimationStateMachine, didMove dx: Int, dy: Int) {
         MainActor.assumeIsolated {
+            // Don't move via state machine while user is dragging
+            guard !stateMachine.isDragging else { return }
             position.x += CGFloat(dx)
             position.y -= CGFloat(dy)
             panel.setFrameOrigin(position)

@@ -29,18 +29,10 @@ final class PetPanel: NSPanel {
         hasShadow = false
         hidesOnDeactivate = false
         isMovableByWindowBackground = false
-        ignoresMouseEvents = true
+        ignoresMouseEvents = false
 
         spriteView.imageScaling = .scaleNone
         contentView = spriteView
-
-        let trackingArea = NSTrackingArea(
-            rect: NSRect(origin: .zero, size: frameSize),
-            options: [.mouseEnteredAndExited, .activeAlways],
-            owner: self,
-            userInfo: nil
-        )
-        contentView?.addTrackingArea(trackingArea)
     }
 
     override var canBecomeKey: Bool { false }
@@ -73,19 +65,8 @@ final class PetPanel: NSPanel {
         onDragEnd?(frame.origin)
     }
 
-    override func mouseEntered(with event: NSEvent) {
-        ignoresMouseEvents = false
-        if !isDragging {
-            NSCursor.openHand.set()
-        }
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        if !isDragging {
-            ignoresMouseEvents = true
-            NSCursor.arrow.set()
-        }
-    }
+    // Panel is always interactive (ignoresMouseEvents = false)
+    // but never becomes key or main, so it doesn't steal focus
 
     // MARK: - Context Menu
 

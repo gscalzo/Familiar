@@ -12,7 +12,7 @@
 - [x] Kill animation (fade-out on remove)
 
 ## Interaction
-- [ ] Drag interaction (pick up and drop)
+- [x] Drag interaction (pick up and drop)
 - [ ] Wall climbing (walk up screen edges)
 - [ ] Upside-down walking on screen top
 - [ ] Window walking (walk on app title bars)
