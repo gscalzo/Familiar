@@ -60,7 +60,9 @@ extension PetInstance: AnimationStateMachineDelegate {
             // Don't move via state machine while user is dragging
             guard !stateMachine.isDragging else { return }
             position.x += CGFloat(dx)
-            position.y -= CGFloat(dy)
+            // Gravity boost: fall 2x faster for snappier drops
+            let isFalling = dy > 0 && currentSurface == nil
+            position.y -= CGFloat(dy) * (isFalling ? 2.0 : 1.0)
             panel.setFrameOrigin(position)
         }
     }
