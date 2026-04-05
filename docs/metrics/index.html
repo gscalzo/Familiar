@@ -160,15 +160,7 @@
                     return;
                 }
 
-                const labels = data.map((d, i) => {
-                    // Show date, add index if multiple same day
-                    const sameDay = data.filter(x => x.date === d.date);
-                    if (sameDay.length > 1) {
-                        const idx = sameDay.indexOf(d) + 1;
-                        return d.date + ' #' + idx;
-                    }
-                    return d.date;
-                });
+                const labels = data.map(d => d.date);
                 const tests = data.map(d => d.tests);
                 const coverage = data.map(d => d.coverage);
 

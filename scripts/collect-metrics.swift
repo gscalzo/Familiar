@@ -33,9 +33,14 @@ if let data = try? Data(contentsOf: historyURL) {
     entries = (try? JSONDecoder().decode([MetricEntry].self, from: data)) ?? []
 }
 
-// Append new entry (round coverage to 2 decimal places)
+// Replace existing entry for today, or append
 let roundedCoverage = (coverage * 100).rounded() / 100
-entries.append(MetricEntry(date: date, tests: tests, coverage: roundedCoverage))
+let newEntry = MetricEntry(date: date, tests: tests, coverage: roundedCoverage)
+if let index = entries.lastIndex(where: { $0.date == date }) {
+    entries[index] = newEntry
+} else {
+    entries.append(newEntry)
+}
 
 // Write back
 let encoder = JSONEncoder()
