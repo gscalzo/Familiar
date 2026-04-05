@@ -267,39 +267,41 @@ final class PetManager {
         let petW = CGFloat(pet.spriteSheet.frameWidth)
         let petH = CGFloat(pet.spriteSheet.frameHeight)
 
-        // Find which screen the pet is on (or closest to)
-        let screen = screens.min(by: { screenA, screenB in
-            screenA.frame.distance(to: pos) < screenB.frame.distance(to: pos)
-        })?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        // Union of all screen frames — the total desktop area
+        let totalBounds = screens.reduce(screens[0].frame) { $0.union($1.frame) }
+
+        // Find the screen the pet is currently on for surface detection
+        let currentScreen = screens.first(where: { $0.frame.contains(pos) })
+        let visibleBottom = currentScreen?.visibleFrame.minY ?? totalBounds.minY
 
         // Determine current surface
-        if abs(pos.y - screen.minY) < 3 {
+        if abs(pos.y - visibleBottom) < 3 {
             pet.currentSurface = .screenBottom
         } else {
             pet.currentSurface = nil
         }
 
-        // Check screen edge collisions
-        if pos.x <= screen.minX {
-            // Hit left edge
-            pet.position.x = screen.minX
+        // Check edges of the TOTAL desktop area (not individual screens)
+        if pos.x <= totalBounds.minX {
+            pet.position.x = totalBounds.minX
             pet.panel.setFrameOrigin(pet.position)
             pet.stateMachine.handleBorderHit(type: .vertical)
-        } else if pos.x + petW >= screen.maxX {
-            // Hit right edge
-            pet.position.x = screen.maxX - petW
+        } else if pos.x + petW >= totalBounds.maxX {
+            pet.position.x = totalBounds.maxX - petW
             pet.panel.setFrameOrigin(pet.position)
             pet.stateMachine.handleBorderHit(type: .vertical)
         }
 
-        // Keep on screen bottom (gravity placeholder)
-        if pos.y < screen.minY {
-            pet.position.y = screen.minY
+        // Keep on screen bottom
+        if pos.y < visibleBottom {
+            pet.position.y = visibleBottom
             pet.panel.setFrameOrigin(pet.position)
         }
 
-        // Fallen off bottom somehow — respawn
-        if pos.y < screen.minY - petH * 3 {
+        // Completely off all screens — respawn
+        let margin = petH * 3
+        if pos.y < totalBounds.minY - margin || pos.y > totalBounds.maxY + margin {
+            let screen = NSScreen.main?.visibleFrame ?? totalBounds
             pet.position = CGPoint(x: screen.midX, y: screen.minY)
             pet.panel.setFrameOrigin(pet.position)
             pet.stateMachine.respawn()
