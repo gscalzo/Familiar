@@ -5,12 +5,12 @@
     "tests" : 91
   },
   {
-    "avgComplexity" : 2.4,
+    "avgComplexity" : 1.7,
     "classes" : 32,
-    "coverage" : 85.95,
+    "coverage" : 85.75,
     "date" : "2026-04-05",
-    "loc" : 1978,
-    "methods" : 139,
+    "loc" : 2028,
+    "methods" : 199,
     "tests" : 91
   }
 ]
