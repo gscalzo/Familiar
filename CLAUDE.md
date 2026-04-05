@@ -34,7 +34,8 @@ Before considering a session done, ALL of these must pass:
 
 1. **SwiftLint** -- `swiftlint lint --quiet` (zero warnings/errors)
 2. **SwiftFormat** -- `swiftformat --lint Familiar/` (zero formatting issues)
-3. **Build** -- `swift build` or `xcodebuild` succeeds
+3. **Complexity** -- `uvx lizard Familiar/ --exclude ".build/*" -l swift -C 5` (zero warnings, all functions CCN < 5)
+4. **Build** -- `swift build` or `xcodebuild` succeeds
 4. **Tests** -- `swift test` or `xcodebuild test` passes
 
 Run `./scripts/check.sh` to verify all at once.
