@@ -1,13 +1,13 @@
 #!/usr/bin/env swift
 import Foundation
 
-// Usage: collect-metrics.swift <tests> <coverage> [code-metrics-json-path]
+// Usage: collect-metrics.swift <tests> <coverage> [code-metrics-json] [avg-ccn]
 
 guard CommandLine.arguments.count >= 3,
       let tests = Int(CommandLine.arguments[1]),
       let coverage = Double(CommandLine.arguments[2])
 else {
-    fputs("Usage: collect-metrics.swift <test_count> <coverage_pct> [code-metrics-json]\n", stderr)
+    fputs("Usage: collect-metrics.swift <test_count> <coverage_pct> [code-metrics-json] [avg-ccn]\n", stderr)
     exit(1)
 }
 
@@ -18,6 +18,7 @@ struct MetricEntry: Codable {
     var loc: Int?
     var methods: Int?
     var classes: Int?
+    var avgComplexity: Double?
 }
 
 let formatter = DateFormatter()
@@ -40,7 +41,7 @@ let roundedCoverage = (coverage * 100).rounded() / 100
 var newEntry = MetricEntry(date: date, tests: tests, coverage: roundedCoverage)
 
 // Parse code metrics from swift-code-metrics output if provided
-if CommandLine.arguments.count >= 4 {
+if CommandLine.arguments.count >= 4, !CommandLine.arguments[3].isEmpty {
     let metricsPath = CommandLine.arguments[3]
     if let data = try? Data(contentsOf: URL(fileURLWithPath: metricsPath)),
        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -63,6 +64,11 @@ if CommandLine.arguments.count >= 4 {
     }
 }
 
+// Parse average cyclomatic complexity from lizard if provided
+if CommandLine.arguments.count >= 5, let ccn = Double(CommandLine.arguments[4]) {
+    newEntry.avgComplexity = (ccn * 100).rounded() / 100
+}
+
 if let index = entries.lastIndex(where: { $0.date == date }) {
     entries[index] = newEntry
 } else {
@@ -75,4 +81,5 @@ let json = try encoder.encode(entries)
 try json.write(to: historyURL)
 
 let locInfo = newEntry.loc.map { ", \($0) LOC, \(newEntry.methods ?? 0) methods" } ?? ""
-print("Metrics recorded: \(date) — \(tests) tests, \(roundedCoverage)% coverage\(locInfo)")
+let ccnInfo = newEntry.avgComplexity.map { ", CCN \($0)" } ?? ""
+print("Metrics recorded: \(date) — \(tests) tests, \(roundedCoverage)% coverage\(locInfo)\(ccnInfo)")

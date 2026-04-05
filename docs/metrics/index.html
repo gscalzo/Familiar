@@ -143,6 +143,11 @@
                 <div class="stat-label">Methods</div>
                 <div class="stat-delta" id="delta-methods"></div>
             </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-ccn" style="color: #f472b6;">—</div>
+                <div class="stat-label">Avg CCN</div>
+                <div class="stat-delta" id="delta-ccn"></div>
+            </div>
         </div>
 
         <div class="chart-card">
@@ -189,6 +194,9 @@
                     document.getElementById('stat-loc').textContent = latest.loc;
                     document.getElementById('stat-methods').textContent = latest.methods;
                 }
+                if (latest.avgComplexity != null) {
+                    document.getElementById('stat-ccn').textContent = latest.avgComplexity;
+                }
 
                 // Deltas
                 if (data.length > 1) {
@@ -200,6 +208,10 @@
                     if (latest.loc != null && prev.loc != null) {
                         setDelta('delta-loc', latest.loc - prev.loc, '');
                         setDelta('delta-methods', latest.methods - prev.methods, '');
+                    }
+                    if (latest.avgComplexity != null && prev.avgComplexity != null) {
+                        const dc = Math.round((latest.avgComplexity - prev.avgComplexity) * 100) / 100;
+                        setDelta('delta-ccn', dc, '', true);
                     }
                 }
 
@@ -414,14 +426,14 @@
                 document.getElementById('empty-msg').style.display = 'block';
             });
 
-        function setDelta(id, value, suffix) {
+        function setDelta(id, value, suffix, lowerIsBetter) {
             const el = document.getElementById(id);
             if (value > 0) {
                 el.textContent = '+' + value + suffix;
-                el.className = 'stat-delta delta-up';
+                el.className = 'stat-delta ' + (lowerIsBetter ? 'delta-down' : 'delta-up');
             } else if (value < 0) {
                 el.textContent = value + suffix;
-                el.className = 'stat-delta delta-down';
+                el.className = 'stat-delta ' + (lowerIsBetter ? 'delta-up' : 'delta-down');
             } else {
                 el.textContent = '—';
                 el.className = 'stat-delta delta-same';

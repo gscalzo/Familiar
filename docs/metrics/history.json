@@ -5,6 +5,7 @@
     "tests" : 91
   },
   {
+    "avgComplexity" : 2.4,
     "classes" : 32,
     "coverage" : 85.95,
     "date" : "2026-04-05",
