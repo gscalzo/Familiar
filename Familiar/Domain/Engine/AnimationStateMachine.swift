@@ -26,6 +26,7 @@ public final class AnimationStateMachine {
 
     // Special animation IDs (resolved by name at init)
     private let fallAnimationID: Int?
+    private let fallFastAnimationID: Int?
     private let dragAnimationID: Int?
     private let killAnimationID: Int?
 
@@ -49,6 +50,7 @@ public final class AnimationStateMachine {
         self.fallAnimationID = animations.values.first(where: { $0.name == "fall" })?.id
         self.dragAnimationID = animations.values.first(where: { $0.name == "drag" })?.id
         self.killAnimationID = animations.values.first(where: { $0.name == "kill" })?.id
+        self.fallFastAnimationID = animations.values.first(where: { $0.name == "fall fast" })?.id
     }
 
     // MARK: - Public API
@@ -138,7 +140,9 @@ public final class AnimationStateMachine {
 
     public func handleDragEnd() {
         isDragging = false
-        if let fallID = fallAnimationID {
+        if let fastID = fallFastAnimationID {
+            setAnimation(fastID)
+        } else if let fallID = fallAnimationID {
             setAnimation(fallID)
         }
     }
