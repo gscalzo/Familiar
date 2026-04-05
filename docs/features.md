@@ -8,7 +8,7 @@
 - [x] Animation interval timing (per-animation speed)
 - [x] Random idle behaviors (sleep, eat, bathe via endAnimation transitions)
 - [x] Run/boing (via endAnimation transitions)
-- [ ] Gravity/falling (fall when not on a surface)
+- [x] Gravity/falling (fall after drag drop, land on screen bottom)
 - [x] Kill animation (fade-out on remove)
 
 ## Interaction
@@ -23,7 +23,7 @@
 - [x] Event commands (yay/oops/hmm/go/done)
 - [x] Named pets (spawn/kill per agent session)
 - [x] Animation config file (~/.familiar/animations.json)
-- [ ] Custom mood/event mappings via config
+- [x] Custom mood/event mappings via config (~/.familiar/animations.json)
 
 ## Menu Bar
 - [x] Add/remove pets
@@ -31,7 +31,7 @@
 - [x] Reset positions
 - [x] Load custom XML
 - [x] About dialog
-- [ ] Launch at login
+- [x] Launch at login
 
 ## Advanced
 - [ ] Child pets (black sheep companion)

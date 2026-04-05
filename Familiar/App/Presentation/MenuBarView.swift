@@ -34,6 +34,11 @@ struct MenuBarView: View {
 
         Divider()
 
+        Toggle("Launch at Login", isOn: Binding(
+            get: { LaunchAtLogin.isEnabled },
+            set: { LaunchAtLogin.isEnabled = $0 }
+        ))
+
         Button("About Familiar...") { showAbout() }
 
         Button("Quit") { NSApp.terminate(nil) }
