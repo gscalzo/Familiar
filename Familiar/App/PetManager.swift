@@ -281,12 +281,12 @@ final class PetManager {
             pet.currentSurface = nil
         }
 
-        // Check edges of the TOTAL desktop area (not individual screens)
-        if pos.x <= totalBounds.minX {
+        // Check edges — only when moving TOWARD the edge
+        if pos.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
             pet.position.x = totalBounds.minX
             pet.panel.setFrameOrigin(pet.position)
             pet.stateMachine.handleBorderHit(type: .vertical)
-        } else if pos.x + petW >= totalBounds.maxX {
+        } else if pos.x + petW >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
             pet.position.x = totalBounds.maxX - petW
             pet.panel.setFrameOrigin(pet.position)
             pet.stateMachine.handleBorderHit(type: .vertical)
