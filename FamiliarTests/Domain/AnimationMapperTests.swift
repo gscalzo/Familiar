@@ -68,4 +68,28 @@ struct AnimationMapperTests {
         )
         #expect(id == nil)
     }
+
+    @Test func resolveWithEmptyMoodsConfig() {
+        let emptyConfig = AnimationConfig(moods: [:], events: [:])
+        let id = AnimationMapper.resolve(
+            mood: "chill", config: emptyConfig, animations: Self.testAnimations
+        )
+        // Falls back to ["walk"] hardcoded default
+        #expect(id == 1)
+    }
+
+    @Test func resolveEventWithEmptyAnimations() {
+        let id = AnimationMapper.resolveEvent(
+            event: "yay", config: config, animations: [:]
+        )
+        #expect(id == nil)
+    }
+
+    @Test func resolveMoodWithAnimationNameNotFound() {
+        let badConfig = AnimationConfig(moods: ["chill": ["nonexistent"]], events: [:])
+        let id = AnimationMapper.resolve(
+            mood: "chill", config: badConfig, animations: Self.testAnimations
+        )
+        #expect(id == nil)
+    }
 }

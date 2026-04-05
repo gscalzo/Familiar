@@ -605,3 +605,35 @@ The complete feature set implemented across Tasks 1-7:
 - All 91 tests pass across 12 suites
 - lizard reports 0 warnings (all 216 functions at CCN <= 5)
 - `./scripts/check.sh` all green (SwiftLint, SwiftFormat, build, tests)
+
+---
+
+## 2026-04-04 — Comprehensive Test Coverage Expansion
+
+### User Request
+> "Add comprehensive tests to fill coverage gaps. Do NOT modify any source files -- only add tests."
+
+### What Was Done
+Added 25 new tests across 5 test files (91 -> 116 total tests):
+
+**AnimationStateMachineTests.swift** (10 new tests):
+- Border hit: transitions to next animation, no-match does nothing, empty border does nothing
+- Gravity: transitions via endGravity, falls back to fall animation, no fall does nothing
+- Mood persistence: mood loops after border hit with no transitions, event returns to mood not event
+- Edge cases: tick with invalid animation ID, respawn with zero-probability spawns
+
+**AnimationSequenceTests.swift** (3 new tests):
+- Empty frames returns 0, single frame with repeats, step beyond totalSteps
+
+**AnimationMapperTests.swift** (3 new tests):
+- Empty moods config falls back to hardcoded default, empty animations dict returns nil, nonexistent animation name returns nil
+
+**XMLAnimationParserTests.swift** (5 new tests):
+- Parses child elements, animation with no border section, flip action, multiple spawns, expression flags (isScreenDependent/isDynamic)
+
+**StateFileWatcherTests.swift** (4 new tests):
+- writeStates creates file, writeStates overwrites existing, readStates with 3 pets, clearEvent preserves other pets
+
+### Verification
+- All 116 tests pass across 12 suites
+- `./scripts/check.sh` all green (SwiftLint, SwiftFormat, build, tests)

@@ -315,4 +315,204 @@ struct AnimationStateMachineTests {
         }
         #expect(sm.currentAnimationID == 1)
     }
+
+    // MARK: - Border hit tests
+
+    @Test("handleBorderHit transitions to next animation")
+    func handleBorderHitTransitionsToNextAnimation() {
+        let anim = makeAnimation(
+            id: 1, frames: [0, 1],
+            endBorder: [NextAnim(animationId: 2, probability: 100, only: .none)]
+        )
+        let anim2 = makeAnimation(id: 2, frames: [5, 6])
+        let sm = AnimationStateMachine(
+            animations: [1: anim, 2: anim2], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleBorderHit(type: .taskbar)
+
+        #expect(sm.currentAnimationID == 2)
+    }
+
+    @Test("handleBorderHit no match does nothing")
+    func handleBorderHitNoMatchDoesNothing() {
+        // endBorder only matches .window (rawValue 0x02)
+        let anim = makeAnimation(
+            id: 1, frames: [0, 1],
+            endBorder: [NextAnim(animationId: 2, probability: 100, only: .window)]
+        )
+        let anim2 = makeAnimation(id: 2, frames: [5, 6])
+        let sm = AnimationStateMachine(
+            animations: [1: anim, 2: anim2], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleBorderHit(type: .vertical)
+
+        #expect(sm.currentAnimationID == 1)
+    }
+
+    @Test("handleBorderHit empty border does nothing")
+    func handleBorderHitEmptyBorderDoesNothing() {
+        let anim = makeAnimation(id: 1, frames: [0, 1], endBorder: [])
+        let sm = AnimationStateMachine(
+            animations: [1: anim], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleBorderHit(type: .taskbar)
+
+        #expect(sm.currentAnimationID == 1)
+    }
+
+    // MARK: - Gravity tests
+
+    @Test("handleGravityLost transitions via endGravity")
+    func handleGravityLostTransitionsViaEndGravity() {
+        let anim = makeAnimation(
+            id: 1, frames: [0, 1],
+            endGravity: [NextAnim(animationId: 3, probability: 100, only: .none)]
+        )
+        let anim3 = makeAnimation(id: 3, frames: [7, 8])
+        let sm = AnimationStateMachine(
+            animations: [1: anim, 3: anim3], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleGravityLost()
+
+        #expect(sm.currentAnimationID == 3)
+    }
+
+    @Test("handleGravityLost falls back to fall animation")
+    func handleGravityLostFallsBackToFall() {
+        let anim = makeAnimation(id: 1, frames: [0, 1], endGravity: [])
+        let fall = makeAnimation(id: 2, name: "fall", frames: [7, 8])
+        let sm = AnimationStateMachine(
+            animations: [1: anim, 2: fall], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleGravityLost()
+
+        #expect(sm.currentAnimationID == 2)
+    }
+
+    @Test("handleGravityLost no fall does nothing")
+    func handleGravityLostNoFallDoesNothing() {
+        let anim = makeAnimation(id: 1, frames: [0, 1], endGravity: [])
+        let sm = AnimationStateMachine(
+            animations: [1: anim], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleGravityLost()
+
+        // No fall animation exists, should stay on current
+        #expect(sm.currentAnimationID == 1)
+    }
+
+    // MARK: - Mood persistence tests
+
+    @Test("mood animation persists after border hit with no transitions")
+    func moodAnimationPersistsAfterBorderHit() {
+        let walk = makeAnimation(id: 1, frames: [0, 1], endAnimation: [], endBorder: [])
+        let sm = AnimationStateMachine(
+            animations: [1: walk], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        let delegate = MockDelegate()
+        sm.delegate = delegate
+
+        sm.setMoodAnimation(1)
+
+        // Border hit with no transitions should not change animation
+        sm.handleBorderHit(type: .taskbar)
+        #expect(sm.currentAnimationID == 1)
+
+        // Tick through to sequence completion — mood should loop back
+        for _ in 0 ..< 10 {
+            sm.tick(currentSurface: nil)
+        }
+        #expect(sm.currentAnimationID == 1)
+    }
+
+    @Test("event animation returns to mood after sequence completes, not the event")
+    func eventAnimationReturnsToMoodAfterBorderHit() {
+        let walk = makeAnimation(id: 1, frames: [0, 1], endAnimation: [
+            NextAnim(animationId: 1, probability: 100, only: .none),
+        ])
+        let eventAnim = makeAnimation(id: 10, frames: [20, 21], endAnimation: [])
+        let sm = AnimationStateMachine(
+            animations: [1: walk, 10: eventAnim], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        let delegate = MockDelegate()
+        sm.delegate = delegate
+
+        sm.setMoodAnimation(1)
+        sm.playEventAnimation(10, returnToMood: 1)
+        #expect(sm.currentAnimationID == 10)
+
+        // Tick through event sequence completion
+        for _ in 0 ..< 10 {
+            sm.tick(currentSurface: nil)
+        }
+
+        // Should return to mood (1), not stay on event (10)
+        #expect(sm.currentAnimationID == 1)
+    }
+
+    // MARK: - Edge cases
+
+    @Test("tick with invalid animation ID does nothing")
+    func tickWithInvalidAnimationIDDoesNothing() {
+        let anim = makeAnimation(id: 1, frames: [0, 1])
+        let sm = AnimationStateMachine(
+            animations: [1: anim], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        let delegate = MockDelegate()
+        sm.delegate = delegate
+
+        // Set to a valid animation first, then force an invalid ID via setAnimationForTesting
+        // setAnimation guards against unknown IDs, so currentAnimationID stays 0
+        sm.setAnimationForTesting(999)
+
+        // currentAnimationID should remain 0 since 999 doesn't exist
+        #expect(sm.currentAnimationID == 0)
+
+        // Tick should not crash
+        sm.tick(currentSurface: nil)
+        #expect(delegate.frameChanges.isEmpty)
+    }
+
+    @Test("respawn with zero probability spawns does not crash")
+    func respawnWithZeroProbabilitySpawns() {
+        let spawn = Spawn(
+            id: 0, probability: 0,
+            x: .constant(0), y: .constant(0),
+            nextAnimations: [NextAnim(animationId: 1, probability: 100, only: .none)]
+        )
+        let anim = makeAnimation(id: 1, frames: [0])
+        let sm = AnimationStateMachine(
+            animations: [1: anim], spawns: [spawn],
+            expressionContext: { defaultContext }
+        )
+        let delegate = MockDelegate()
+        sm.delegate = delegate
+
+        // Should not crash even with probability 0
+        sm.respawn()
+
+        // pickWeightedSpawn returns nil when totalProb == 0
+        #expect(delegate.respawnCount == 0)
+    }
 }

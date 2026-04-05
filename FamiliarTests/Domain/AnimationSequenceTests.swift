@@ -46,4 +46,22 @@ struct AnimationSequenceTests {
         #expect(seq.frameIndex(at: 4) == 20)
         #expect(seq.frameIndex(at: 5) == 30)
     }
+
+    @Test func frameIndexWithEmptyFrames() {
+        let seq = AnimationSequence(frames: [], repeatCount: .constant(0), repeatFrom: 0, action: nil)
+        // Empty frames should return 0 and not crash
+        #expect(seq.frameIndex(at: 0) == 0)
+    }
+
+    @Test func totalStepsWithSingleFrame() {
+        let seq = AnimationSequence(frames: [5], repeatCount: .constant(3), repeatFrom: 0, action: nil)
+        // 1 + (1 - 0) * 3 = 4
+        #expect(seq.totalSteps(repeatValue: 3) == 4)
+    }
+
+    @Test func frameIndexBeyondTotalSteps() {
+        let seq = AnimationSequence(frames: [10, 20], repeatCount: .constant(1), repeatFrom: 0, action: nil)
+        // totalSteps = 2 + (2 - 0) * 1 = 4, try step 100 -- should not crash
+        _ = seq.frameIndex(at: 100)
+    }
 }

@@ -166,4 +166,153 @@ struct XMLAnimationParserTests {
             _ = try parser.parse(Data())
         }
     }
+
+    @Test func parsesChildElements() throws {
+        let xmlWithChildren = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <animations xmlns="https://esheep.petrucci.ch/">
+          <header>
+            <author>Test</author><title>Test</title>
+            <petname>Test</petname><version>1</version>
+            <info>Test</info><application>1</application>
+          </header>
+          <image>
+            <tilesx>2</tilesx><tilesy>2</tilesy>
+            <png><![CDATA[iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAADklEQVQIW2P4z8BQDwAEgAF/QualcQ==]]></png>
+          </image>
+          <spawns>
+            <spawn id="1" probability="100">
+              <x>0</x><y>0</y>
+              <next probability="100">1</next>
+            </spawn>
+          </spawns>
+          <animations>
+            <animation id="1">
+              <name>walk</name>
+              <start><x>0</x><y>0</y><interval>100</interval><offsety>0</offsety><opacity>1</opacity></start>
+              <end><x>0</x><y>0</y><interval>100</interval><offsety>0</offsety><opacity>1</opacity></end>
+              <sequence repeat="0" repeatfrom="0"><frame>0</frame><next probability="100">1</next></sequence>
+            </animation>
+          </animations>
+          <childs>
+            <child animationid="1">
+              <x>imageX</x><y>imageY</y><next>2</next>
+            </child>
+          </childs>
+        </animations>
+        """
+        let parser = XMLAnimationParser()
+        let (data, _) = try parser.parse(Data(xmlWithChildren.utf8))
+        #expect(data.children.count == 1)
+        #expect(data.children[0].animationId == 1)
+        #expect(data.children[0].x.raw == "imageX")
+        #expect(data.children[0].y.raw == "imageY")
+        #expect(data.children[0].nextAnimationId == 2)
+    }
+
+    @Test func parsesAnimationWithNoEndBorder() throws {
+        let (data, _) = try parseTestXML()
+        let fall = data.animations[2]!
+        #expect(fall.endBorder.isEmpty)
+    }
+
+    @Test func parsesAnimationWithFlipAction() throws {
+        let xmlWithFlip = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <animations xmlns="https://esheep.petrucci.ch/">
+          <header>
+            <author>Test</author><title>Test</title>
+            <petname>Test</petname><version>1</version>
+            <info>Test</info><application>1</application>
+          </header>
+          <image>
+            <tilesx>2</tilesx><tilesy>2</tilesy>
+            <png><![CDATA[iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAADklEQVQIW2P4z8BQDwAEgAF/QualcQ==]]></png>
+          </image>
+          <spawns>
+            <spawn id="1" probability="100">
+              <x>0</x><y>0</y>
+              <next probability="100">1</next>
+            </spawn>
+          </spawns>
+          <animations>
+            <animation id="1">
+              <name>flip_walk</name>
+              <start><x>3</x><y>0</y><interval>100</interval><offsety>0</offsety><opacity>1</opacity></start>
+              <end><x>3</x><y>0</y><interval>100</interval><offsety>0</offsety><opacity>1</opacity></end>
+              <sequence repeat="0" repeatfrom="0">
+                <frame>0</frame>
+                <action>flip</action>
+                <next probability="100">1</next>
+              </sequence>
+            </animation>
+          </animations>
+        </animations>
+        """
+        let parser = XMLAnimationParser()
+        let (data, _) = try parser.parse(Data(xmlWithFlip.utf8))
+        let anim = data.animations[1]!
+        #expect(anim.sequence.action == "flip")
+    }
+
+    @Test func parsesMultipleSpawns() throws {
+        let xmlMultiSpawn = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <animations xmlns="https://esheep.petrucci.ch/">
+          <header>
+            <author>Test</author><title>Test</title>
+            <petname>Test</petname><version>1</version>
+            <info>Test</info><application>1</application>
+          </header>
+          <image>
+            <tilesx>2</tilesx><tilesy>2</tilesy>
+            <png><![CDATA[iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAADklEQVQIW2P4z8BQDwAEgAF/QualcQ==]]></png>
+          </image>
+          <spawns>
+            <spawn id="1" probability="60">
+              <x>0</x><y>0</y>
+              <next probability="100">1</next>
+            </spawn>
+            <spawn id="2" probability="40">
+              <x>screenW</x><y>screenH</y>
+              <next probability="100">1</next>
+            </spawn>
+          </spawns>
+          <animations>
+            <animation id="1">
+              <name>walk</name>
+              <start><x>0</x><y>0</y><interval>100</interval><offsety>0</offsety><opacity>1</opacity></start>
+              <end><x>0</x><y>0</y><interval>100</interval><offsety>0</offsety><opacity>1</opacity></end>
+              <sequence repeat="0" repeatfrom="0"><frame>0</frame><next probability="100">1</next></sequence>
+            </animation>
+          </animations>
+        </animations>
+        """
+        let parser = XMLAnimationParser()
+        let (data, _) = try parser.parse(Data(xmlMultiSpawn.utf8))
+        #expect(data.spawns.count == 2)
+        #expect(data.spawns[0].id == 1)
+        #expect(data.spawns[0].probability == 60)
+        #expect(data.spawns[1].id == 2)
+        #expect(data.spawns[1].probability == 40)
+    }
+
+    @Test func parsesExpressionFlags() throws {
+        let (data, _) = try parseTestXML()
+        // "screenW/2" should be screen-dependent
+        let spawn = data.spawns[0]
+        #expect(spawn.x.raw == "screenW/2")
+        #expect(spawn.x.isScreenDependent == true)
+        #expect(spawn.x.isDynamic == false)
+
+        // "screenH" should be screen-dependent
+        #expect(spawn.y.raw == "screenH")
+        #expect(spawn.y.isScreenDependent == true)
+
+        // Constant "3" should have both false
+        let walk = data.animations[1]!
+        #expect(walk.start.x.raw == "3")
+        #expect(walk.start.x.isScreenDependent == false)
+        #expect(walk.start.x.isDynamic == false)
+    }
 }
