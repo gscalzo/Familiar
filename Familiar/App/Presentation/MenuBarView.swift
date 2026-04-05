@@ -47,10 +47,9 @@ struct MenuBarView: View {
         alert.messageText = "Familiar"
         alert.informativeText = """
         A macOS desktop pet inspired by eSheep (1995).
+        By Giordano Scalzo
 
-        Pet: \(header?.petName ?? "Unknown")
-        Author: \(header?.author ?? "Unknown")
-        Version: \(header?.version ?? "—")
+        Current pet: \(header?.petName ?? "Unknown") by \(header?.author ?? "Unknown")
 
         Control with the fam CLI:
           fam work    fam yay    fam think
