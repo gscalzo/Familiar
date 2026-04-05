@@ -1,7 +1,7 @@
 # Familiar for macOS
 
 ![Tests](https://img.shields.io/badge/tests-91-blue)
-![Coverage](https://img.shields.io/badge/coverage-85.83%25-green)
+![Coverage](https://img.shields.io/badge/coverage-85.93%25-green)
 
 A macOS menubar app that recreates the classic eSheep desktop pet experience. Your pet walks on screen edges and window title bars, falls with gravity, sleeps, runs, climbs walls, and responds to drag interactions.
 
