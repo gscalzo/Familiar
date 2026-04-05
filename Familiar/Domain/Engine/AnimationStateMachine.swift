@@ -110,10 +110,20 @@ public final class AnimationStateMachine {
     }
 
     public func respawn() {
-        guard let selectedSpawn = pickWeightedSpawn() else { return }
+        guard let selectedSpawn = pickWeightedSpawn() else {
+            // No weighted spawn available — fall back to first animation
+            if let firstId = animations.keys.sorted().first {
+                setAnimation(firstId)
+            }
+            delegate?.stateMachineDidRequestRespawn(self)
+            return
+        }
 
         if let nextId = TransitionPicker.pick(from: selectedSpawn.nextAnimations, context: .none) {
             setAnimation(nextId)
+        } else if let firstId = animations.keys.sorted().first {
+            // Spawn's next has probability 0 — fall back to first animation
+            setAnimation(firstId)
         }
 
         delegate?.stateMachineDidRequestRespawn(self)

@@ -264,7 +264,7 @@ struct AnimationStateMachineTests {
 
         sm.respawn()
 
-        #expect(delegate.respawnCount == 0)
+        #expect(delegate.respawnCount == 1)
     }
 
     @Test("setMoodAnimation switches to specified animation and loops")
@@ -513,6 +513,6 @@ struct AnimationStateMachineTests {
         sm.respawn()
 
         // pickWeightedSpawn returns nil when totalProb == 0
-        #expect(delegate.respawnCount == 0)
+        #expect(delegate.respawnCount == 1)
     }
 }

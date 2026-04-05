@@ -83,16 +83,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     static func availablePets() -> [String] {
-        // SPM flattens resources — all XMLs are at bundle root
         let bundle = Bundle.module
-        guard let bundlePath = bundle.resourceURL else { return [] }
+        guard let bundlePath = bundle.resourceURL else {
+            NSLog("[Familiar] ERROR: No resource URL in bundle")
+            return []
+        }
         let files = (try? FileManager.default.contentsOfDirectory(
             at: bundlePath, includingPropertiesForKeys: nil
         )) ?? []
-        return files
+        let pets = files
             .filter { $0.pathExtension == "xml" }
             .map { $0.deletingPathExtension().lastPathComponent }
             .sorted()
+        NSLog("[Familiar] Available pets: \(pets)")
+        return pets
     }
 
     private func setupStateFileAndStart() {

@@ -40,20 +40,34 @@ final class PetManager {
     }
 
     func addPetOfType(named typeName: String) {
-        guard let url = AppDelegate.findPetXML(named: typeName),
-              let data = try? Data(contentsOf: url)
-        else { return }
+        guard let url = AppDelegate.findPetXML(named: typeName) else {
+            NSLog("[Familiar] ERROR: XML not found for pet type: \(typeName)")
+            return
+        }
+        guard let data = try? Data(contentsOf: url) else {
+            NSLog("[Familiar] ERROR: Could not read XML at: \(url.path)")
+            return
+        }
         let parser = XMLAnimationParser()
-        guard let (petData, base64PNG) = try? parser.parse(data) else { return }
+        guard let (petData, base64PNG) = try? parser.parse(data) else {
+            NSLog("[Familiar] ERROR: Failed to parse XML for: \(typeName)")
+            return
+        }
         guard let pet = makePetInstance(
             petData: petData, base64PNG: base64PNG, name: nil
-        ) else { return }
+        ) else {
+            NSLog("[Familiar] ERROR: Failed to create pet instance for: \(typeName)")
+            return
+        }
 
         pet.petTypeName = petData.header.petName
         pet.stateMachine.respawn()
         pet.spriteSheet.setFlipped(!pet.stateMachine.isMovingLeft)
         placeOnScreenBottom(pet)
         showPet(pet)
+        NSLog(
+            "[Familiar] Pet panel at \(pet.position), frame=\(pet.panel.frame), visible=\(pet.panel.isVisible), frameCount=\(pet.spriteSheet.frameCount)"
+        )
         NSLog("[Familiar] Added pet of type: \(typeName)")
     }
 
