@@ -16,6 +16,7 @@ final class PetInstance: Identifiable {
     var currentInterval: Int = 100 // ms, updated by delegate
     var lastTickTime: CFTimeInterval = 0
     var isBeingKilled = false
+    var killTickCount = 0
 
     init(
         panel: PetPanel,

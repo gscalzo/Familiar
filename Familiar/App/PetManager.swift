@@ -61,8 +61,7 @@ final class PetManager {
 
     func removePet(id: UUID) {
         guard let pet = activePets.first(where: { $0.id == id }) else { return }
-        pet.isBeingKilled = true
-        pet.stateMachine.handleKill()
+        startKillSequence(pet)
     }
 
     private func finishRemoval(_ pet: PetInstance) {
@@ -180,9 +179,14 @@ final class PetManager {
     private func removePetByName(_ name: String) {
         guard let pet = activePets.first(where: { $0.name == name }) else { return }
         knownMoods.removeValue(forKey: name)
-        pet.isBeingKilled = true
-        pet.stateMachine.handleKill()
+        startKillSequence(pet)
         NSLog("[Familiar] Killing pet '\(name)'")
+    }
+
+    private func startKillSequence(_ pet: PetInstance) {
+        pet.isBeingKilled = true
+        pet.killTickCount = 0
+        pet.stateMachine.handleKill()
     }
 
     // MARK: - Pet Factory
@@ -220,6 +224,9 @@ final class PetManager {
         )
 
         stateMachine.delegate = pet
+        panel.onRemove = { [weak self] in
+            self?.removePet(id: pet.id)
+        }
         environmentDetector.registerOwnPanel(panel.windowNumber)
 
         return pet
@@ -257,9 +264,15 @@ final class PetManager {
             if elapsed >= Double(pet.currentInterval) {
                 pet.lastTickTime = now
                 pet.stateMachine.tick(currentSurface: pet.currentSurface)
-                if pet.isBeingKilled, pet.panel.alphaValue <= 0.01 {
-                    petsToRemove.append(pet)
-                } else if !pet.isBeingKilled {
+                if pet.isBeingKilled {
+                    pet.killTickCount += 1
+                    // Manually fade out over ~20 ticks
+                    let opacity = max(0, 1.0 - Double(pet.killTickCount) / 20.0)
+                    pet.panel.alphaValue = opacity
+                    if opacity <= 0 {
+                        petsToRemove.append(pet)
+                    }
+                } else {
                     checkBounds(pet)
                 }
             }
