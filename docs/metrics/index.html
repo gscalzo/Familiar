@@ -5,121 +5,153 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Familiar — Quality Metrics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0d1117;
-            color: #c9d1d9;
-            padding: 2rem;
-            max-width: 900px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e8;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 860px;
             margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
         }
         h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: #f0f6fc;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
         }
         .subtitle {
-            color: #8b949e;
-            margin-bottom: 2rem;
+            color: #6b6b80;
+            font-size: 0.9rem;
         }
-        .badges {
+        .stats {
             display: flex;
-            gap: 1rem;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #13131a 0%, #1a1a28 100%);
+            border: 1px solid #2a2a3d;
+            border-radius: 16px;
+            padding: 1.5rem 2.5rem;
+            text-align: center;
+            min-width: 160px;
+        }
+        .stat-value {
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+        .stat-value.tests { color: #6c9eff; }
+        .stat-value.coverage { color: #5de8a0; }
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b6b80;
+        }
+        .stat-delta {
+            font-size: 0.8rem;
+            margin-top: 0.4rem;
+        }
+        .delta-up { color: #5de8a0; }
+        .delta-down { color: #ff6b6b; }
+        .delta-same { color: #6b6b80; }
+        .chart-card {
+            background: linear-gradient(135deg, #13131a 0%, #1a1a28 100%);
+            border: 1px solid #2a2a3d;
+            border-radius: 16px;
+            padding: 2rem;
             margin-bottom: 2rem;
-        }
-        .badge {
-            display: inline-flex;
-            border-radius: 6px;
-            overflow: hidden;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        .badge-label {
-            background: #30363d;
-            padding: 0.4rem 0.6rem;
-        }
-        .badge-value {
-            padding: 0.4rem 0.6rem;
-        }
-        .badge-blue .badge-value { background: #1f6feb; color: #fff; }
-        .badge-green .badge-value { background: #238636; color: #fff; }
-        .chart-container {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
         }
         .chart-title {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            color: #f0f6fc;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            color: #9090a8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         canvas { width: 100% !important; }
         .empty {
             text-align: center;
-            padding: 3rem;
-            color: #8b949e;
+            padding: 4rem;
+            color: #6b6b80;
+            font-size: 1.1rem;
         }
         .footer {
-            margin-top: 2rem;
-            color: #484f58;
-            font-size: 0.8rem;
             text-align: center;
+            margin-top: 2rem;
+            color: #3a3a4d;
+            font-size: 0.75rem;
+        }
+        .footer a {
+            color: #6b6b80;
+            text-decoration: none;
+        }
+        .footer a:hover { color: #9090a8; }
+        .updated {
+            text-align: center;
+            color: #3a3a4d;
+            font-size: 0.75rem;
+            margin-bottom: 2rem;
         }
     </style>
 </head>
 <body>
-    <h1>Familiar</h1>
-    <p class="subtitle">Quality Metrics Dashboard</p>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🐾</div>
+            <h1>Familiar</h1>
+            <p class="subtitle">Quality Metrics</p>
+        </div>
 
-    <div class="badges">
-        <span class="badge badge-blue">
-            <span class="badge-label">tests</span>
-            <span class="badge-value" id="badge-tests">—</span>
-        </span>
-        <span class="badge badge-green">
-            <span class="badge-label">coverage</span>
-            <span class="badge-value" id="badge-coverage">—</span>
-        </span>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value tests" id="stat-tests">—</div>
+                <div class="stat-label">Tests</div>
+                <div class="stat-delta" id="delta-tests"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value coverage" id="stat-coverage">—</div>
+                <div class="stat-label">Coverage</div>
+                <div class="stat-delta" id="delta-coverage"></div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Tests & Coverage over time</div>
+            <canvas id="chart" height="280"></canvas>
+        </div>
+
+        <p class="updated" id="updated"></p>
+
+        <div class="empty" id="empty-msg" style="display:none;">
+            No metrics yet. Run <code>git push</code> to collect data.
+        </div>
+
+        <p class="footer">
+            <a href="https://github.com/gscalzo/Familiar">github.com/gscalzo/Familiar</a>
+        </p>
     </div>
-
-    <div class="chart-container">
-        <div class="chart-title">Test Count</div>
-        <canvas id="testsChart"></canvas>
-    </div>
-
-    <div class="chart-container">
-        <div class="chart-title">Code Coverage (%)</div>
-        <canvas id="coverageChart"></canvas>
-    </div>
-
-    <div class="empty" id="empty-msg" style="display:none;">
-        No metrics recorded yet. Push to collect data.
-    </div>
-
-    <p class="footer">Updated on each <code>git push</code> via pre-push hook</p>
 
     <script>
-        const chartDefaults = {
-            responsive: true,
-            animation: { duration: 600 },
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    ticks: { color: '#8b949e', maxTicksLimit: 12 },
-                    grid: { color: '#21262d' }
-                },
-                y: {
-                    ticks: { color: '#8b949e' },
-                    grid: { color: '#21262d' },
-                    beginAtZero: true
-                }
-            }
-        };
-
         fetch('history.json')
             .then(r => r.json())
             .then(data => {
@@ -128,53 +160,149 @@
                     return;
                 }
 
-                const labels = data.map(d => d.date);
+                const labels = data.map((d, i) => {
+                    // Show date, add index if multiple same day
+                    const sameDay = data.filter(x => x.date === d.date);
+                    if (sameDay.length > 1) {
+                        const idx = sameDay.indexOf(d) + 1;
+                        return d.date + ' #' + idx;
+                    }
+                    return d.date;
+                });
                 const tests = data.map(d => d.tests);
                 const coverage = data.map(d => d.coverage);
 
-                // Update badges with latest values
+                // Stats
                 const latest = data[data.length - 1];
-                document.getElementById('badge-tests').textContent = latest.tests;
-                document.getElementById('badge-coverage').textContent = latest.coverage + '%';
+                document.getElementById('stat-tests').textContent = latest.tests;
+                document.getElementById('stat-coverage').textContent = latest.coverage + '%';
 
-                // Test count chart
-                new Chart(document.getElementById('testsChart'), {
+                // Deltas
+                if (data.length > 1) {
+                    const prev = data[data.length - 2];
+                    const dt = latest.tests - prev.tests;
+                    const dc = Math.round((latest.coverage - prev.coverage) * 100) / 100;
+                    setDelta('delta-tests', dt, '');
+                    setDelta('delta-coverage', dc, '%');
+                }
+
+                // Updated timestamp
+                document.getElementById('updated').textContent =
+                    'Last updated: ' + latest.date;
+
+                // Combined chart
+                new Chart(document.getElementById('chart'), {
                     type: 'line',
                     data: {
                         labels,
-                        datasets: [{
-                            data: tests,
-                            borderColor: '#58a6ff',
-                            backgroundColor: 'rgba(88, 166, 255, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#58a6ff'
-                        }]
-                    },
-                    options: { ...chartDefaults }
-                });
-
-                // Coverage chart
-                new Chart(document.getElementById('coverageChart'), {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: [{
-                            data: coverage,
-                            borderColor: '#3fb950',
-                            backgroundColor: 'rgba(63, 185, 80, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#3fb950'
-                        }]
+                        datasets: [
+                            {
+                                label: 'Tests',
+                                data: tests,
+                                borderColor: '#6c9eff',
+                                backgroundColor: 'rgba(108, 158, 255, 0.08)',
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#6c9eff',
+                                pointBorderColor: '#0a0a0f',
+                                pointBorderWidth: 2,
+                                borderWidth: 2.5,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Coverage %',
+                                data: coverage,
+                                borderColor: '#5de8a0',
+                                backgroundColor: 'rgba(93, 232, 160, 0.08)',
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#5de8a0',
+                                pointBorderColor: '#0a0a0f',
+                                pointBorderWidth: 2,
+                                borderWidth: 2.5,
+                                yAxisID: 'y1'
+                            }
+                        ]
                     },
                     options: {
-                        ...chartDefaults,
+                        responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#9090a8',
+                                    font: { family: 'Inter', size: 12 },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#1a1a28',
+                                borderColor: '#2a2a3d',
+                                borderWidth: 1,
+                                titleColor: '#e0e0e8',
+                                bodyColor: '#9090a8',
+                                titleFont: { family: 'Inter', weight: '600' },
+                                bodyFont: { family: 'Inter' },
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: true
+                            }
+                        },
                         scales: {
-                            ...chartDefaults.scales,
-                            y: { ...chartDefaults.scales.y, max: 100 }
+                            x: {
+                                ticks: {
+                                    color: '#4a4a5d',
+                                    font: { family: 'Inter', size: 11 },
+                                    maxRotation: 45
+                                },
+                                grid: { color: '#1a1a28' }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Tests',
+                                    color: '#6c9eff',
+                                    font: { family: 'Inter', size: 11 }
+                                },
+                                ticks: {
+                                    color: '#6c9eff',
+                                    font: { family: 'Inter', size: 11 },
+                                    stepSize: 10
+                                },
+                                grid: { color: '#1a1a28' },
+                                beginAtZero: true
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Coverage %',
+                                    color: '#5de8a0',
+                                    font: { family: 'Inter', size: 11 }
+                                },
+                                ticks: {
+                                    color: '#5de8a0',
+                                    font: { family: 'Inter', size: 11 },
+                                    callback: v => v + '%'
+                                },
+                                grid: { drawOnChartArea: false },
+                                min: 0,
+                                max: 100
+                            }
                         }
                     }
                 });
@@ -182,6 +310,20 @@
             .catch(() => {
                 document.getElementById('empty-msg').style.display = 'block';
             });
+
+        function setDelta(id, value, suffix) {
+            const el = document.getElementById(id);
+            if (value > 0) {
+                el.textContent = '+' + value + suffix;
+                el.className = 'stat-delta delta-up';
+            } else if (value < 0) {
+                el.textContent = value + suffix;
+                el.className = 'stat-delta delta-down';
+            } else {
+                el.textContent = '—';
+                el.className = 'stat-delta delta-same';
+            }
+        }
     </script>
 </body>
 </html>
