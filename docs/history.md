@@ -514,3 +514,45 @@ The complete feature set implemented across Tasks 1-7:
 - **App**: PetManager reconciliation loop, state-file-driven pet lifecycle
 - **CLI**: `fam` tool — `fam work`, `fam yay`, `fam think agent-42`, `fam kill`
 - **Protocol**: File-based IPC via ~/.familiar/state.json, configurable animation mapping via ~/.familiar/animations.json
+
+---
+
+## 2026-04-04 — Code Quality Refactoring (Tidy First)
+
+### User Request
+> Review all Swift source code for maintainability issues following Kent Beck's "Tidy First" principles. Identify structural issues and refactor directly, keeping behavior intact.
+
+### Decisions
+- Focus on extracting long methods into focused single-responsibility helpers
+- Eliminate code duplication (DRY) without over-abstracting
+- Remove dead code
+- Replace force-unwraps with safe alternatives
+- Preserve all public APIs and existing behavior
+
+### What Was Done
+
+**PetManager.swift** (largest file, most refactoring):
+- Extracted `placeOnScreenBottom(_:)` and `showPet(_:)` from duplicated placement logic in `addPet()` and `spawnPet(named:mood:)`
+- Extracted `applyMoodOrRespawn(_:mood:)` to centralize mood-resolution-or-fallback logic
+- Split `reconcileFromStateFile()` (3 mixed concerns) into `spawnMissingPets()`, `killRemovedPets()`, `updateMoodsAndEvents()`
+- Extracted `handlePendingEvent()` and `handleMoodChange()` from nested loop body
+- Eliminated force-unwraps (`pet.name!`) in `killRemovedPets` with safe `guard let` pattern
+- Split `tickAllPets()` into `isReadyForTick()`, `fadeOutKilledPet()`, `updatePanelLevels()`
+- Decomposed `checkBounds()` (~70 lines) into 6 focused methods: `findVisibleBottom()`, `snapToScreenBottom()`, `detectLanding()`, `clampToHorizontalEdges()`, `clampAboveBottom()`, `respawnIfOffScreen()`, `borderTypeForSurface()`
+
+**StateFileWatcher.swift**:
+- Extracted `ensureDirectoryExists()`, `encodeAndWrite(_:to:)`, `decodeFromFile(_:)` generic helpers
+- Eliminated 3x duplicated JSONEncoder setup and 2x duplicated JSONDecoder setup
+
+**XMLAnimationParser.swift**:
+- Extracted `makeNextAnim(from:)` helper, eliminating 4x duplicated NextAnim construction
+
+**AnimationStateMachine.swift**:
+- Extracted local `findAnimation(named:)` function in init to DRY up 4x identical lookup pattern
+
+**PetInstance.swift**:
+- Removed dead `panel.onRemove` closure that captured self only to read and discard `id`
+
+### Verification
+- All 91 tests pass across 12 suites
+- `./scripts/check.sh` all green (SwiftLint, SwiftFormat, build, tests)

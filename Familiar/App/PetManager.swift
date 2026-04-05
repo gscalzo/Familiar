@@ -47,17 +47,8 @@ final class PetManager {
         pet.stateMachine.respawn()
         pet.spriteSheet.setFlipped(!pet.stateMachine.isMovingLeft)
 
-        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-        pet.position = CGPoint(
-            x: screen.minX + CGFloat.random(in: 100 ... max(screen.width - 100, 200)),
-            y: screen.minY
-        )
-        pet.panel.setFrameOrigin(pet.position)
-
-        activePets.append(pet)
-        pet.panel.orderFront(nil)
-
-        if sharedTimer == nil { startTimer() }
+        placeOnScreenBottom(pet)
+        showPet(pet)
     }
 
     func removePet(id: UUID) {
@@ -106,78 +97,71 @@ final class PetManager {
         let stateNames = Set(states.keys)
         let activePetNames = Set(activePets.compactMap(\.name))
 
-        // Spawn new pets
+        spawnMissingPets(stateNames: stateNames, activePetNames: activePetNames, states: states)
+        killRemovedPets(stateNames: stateNames)
+        updateMoodsAndEvents(states: states)
+    }
+
+    private func spawnMissingPets(
+        stateNames: Set<String>,
+        activePetNames: Set<String>,
+        states: [String: PetState]
+    ) {
         for name in stateNames where !activePetNames.contains(name) {
             spawnPet(named: name, mood: states[name]?.mood ?? "chill")
         }
+    }
 
-        // Kill removed pets
-        for pet in activePets where pet.name != nil && !stateNames.contains(pet.name!) {
-            removePetByName(pet.name!)
-        }
-
-        // Update moods and handle events
+    private func killRemovedPets(stateNames: Set<String>) {
         for pet in activePets {
-            guard let name = pet.name, let state = states[name] else { continue }
-
-            // Handle event (one-shot)
-            if let event = state.event, let petData = loadedPetData {
-                if let eventAnimId = AnimationMapper.resolveEvent(
-                    event: event, config: animationConfig, animations: petData.animations
-                ) {
-                    let moodAnimId = AnimationMapper.resolve(
-                        mood: state.mood, config: animationConfig, animations: petData.animations
-                    )
-                    pet.stateMachine.playEventAnimation(eventAnimId, returnToMood: moodAnimId ?? 0)
-                }
-                stateFileWatcher.clearEvent(forPet: name)
-            }
-
-            // Handle mood change
-            if knownMoods[name] != state.mood {
-                knownMoods[name] = state.mood
-                if let petData = loadedPetData,
-                   let animId = AnimationMapper.resolve(
-                       mood: state.mood, config: animationConfig, animations: petData.animations
-                   )
-                {
-                    pet.stateMachine.setMoodAnimation(animId)
-                }
-            }
+            guard let name = pet.name, !stateNames.contains(name) else { continue }
+            removePetByName(name)
         }
     }
 
-    private func spawnPet(named name: String, mood: String) {
-        guard let pet = makePetInstance(name: name) else { return }
+    private func updateMoodsAndEvents(states: [String: PetState]) {
+        for pet in activePets {
+            guard let name = pet.name, let state = states[name] else { continue }
+            handlePendingEvent(pet: pet, name: name, state: state)
+            handleMoodChange(pet: pet, name: name, mood: state.mood)
+        }
+    }
 
-        // Resolve initial animation from mood
+    private func handlePendingEvent(pet: PetInstance, name: String, state: PetState) {
+        guard let event = state.event, let petData = loadedPetData else { return }
+        if let eventAnimId = AnimationMapper.resolveEvent(
+            event: event, config: animationConfig, animations: petData.animations
+        ) {
+            let moodAnimId = AnimationMapper.resolve(
+                mood: state.mood, config: animationConfig, animations: petData.animations
+            )
+            pet.stateMachine.playEventAnimation(eventAnimId, returnToMood: moodAnimId ?? 0)
+        }
+        stateFileWatcher.clearEvent(forPet: name)
+    }
+
+    private func handleMoodChange(pet: PetInstance, name: String, mood: String) {
+        guard knownMoods[name] != mood else { return }
+        knownMoods[name] = mood
         if let petData = loadedPetData,
            let animId = AnimationMapper.resolve(
                mood: mood, config: animationConfig, animations: petData.animations
            )
         {
             pet.stateMachine.setMoodAnimation(animId)
-        } else {
-            pet.stateMachine.respawn()
         }
+    }
 
-        // Sync sprite direction with state machine
+    private func spawnPet(named name: String, mood: String) {
+        guard let pet = makePetInstance(name: name) else { return }
+
+        applyMoodOrRespawn(pet, mood: mood)
         pet.spriteSheet.setFlipped(!pet.stateMachine.isMovingLeft)
-
         knownMoods[name] = mood
 
-        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-        pet.position = CGPoint(
-            x: screen.minX + CGFloat.random(in: 100 ... max(screen.width - 100, 200)),
-            y: screen.minY
-        )
-        pet.panel.setFrameOrigin(pet.position)
-
-        activePets.append(pet)
-        pet.panel.orderFront(nil)
+        placeOnScreenBottom(pet)
+        showPet(pet)
         NSLog("[Familiar] Spawned pet '\(name)' with mood '\(mood)'")
-
-        if sharedTimer == nil { startTimer() }
     }
 
     private func removePetByName(_ name: String) {
@@ -236,6 +220,35 @@ final class PetManager {
         return pet
     }
 
+    // MARK: - Pet Placement
+
+    private func placeOnScreenBottom(_ pet: PetInstance) {
+        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        pet.position = CGPoint(
+            x: screen.minX + CGFloat.random(in: 100 ... max(screen.width - 100, 200)),
+            y: screen.minY
+        )
+        pet.panel.setFrameOrigin(pet.position)
+    }
+
+    private func showPet(_ pet: PetInstance) {
+        activePets.append(pet)
+        pet.panel.orderFront(nil)
+        if sharedTimer == nil { startTimer() }
+    }
+
+    private func applyMoodOrRespawn(_ pet: PetInstance, mood: String) {
+        if let petData = loadedPetData,
+           let animId = AnimationMapper.resolve(
+               mood: mood, config: animationConfig, animations: petData.animations
+           )
+        {
+            pet.stateMachine.setMoodAnimation(animId)
+        } else {
+            pet.stateMachine.respawn()
+        }
+    }
+
     // MARK: - Timer
 
     func ensureTimerStarted() {
@@ -264,107 +277,132 @@ final class PetManager {
         let now = CACurrentMediaTime()
         var petsToRemove: [PetInstance] = []
         for pet in activePets {
-            let elapsed = (now - pet.lastTickTime) * 1000 // ms
-            if elapsed >= Double(pet.currentInterval) {
-                pet.lastTickTime = now
-                // Skip everything while being dragged
-                if pet.stateMachine.isDragging { continue }
+            guard isReadyForTick(pet, now: now) else { continue }
+            pet.lastTickTime = now
+            guard !pet.stateMachine.isDragging else { continue }
 
-                pet.stateMachine.tick(currentSurface: pet.currentSurface)
-                if pet.isBeingKilled {
-                    pet.killTickCount += 1
-                    let opacity = max(0, 1.0 - Double(pet.killTickCount) / 20.0)
-                    pet.panel.alphaValue = opacity
-                    if opacity <= 0 {
-                        petsToRemove.append(pet)
-                    }
-                } else {
-                    checkBounds(pet)
-                }
+            pet.stateMachine.tick(currentSurface: pet.currentSurface)
+            if pet.isBeingKilled {
+                if fadeOutKilledPet(pet) { petsToRemove.append(pet) }
+            } else {
+                checkBounds(pet)
             }
         }
         for pet in petsToRemove {
             finishRemoval(pet)
         }
 
-        if environmentDetector.isFullScreenActive() {
-            activePets.forEach { $0.panel.level = .normal }
-        } else {
-            activePets.forEach { $0.panel.level = .statusBar }
-        }
+        updatePanelLevels()
+    }
+
+    private func isReadyForTick(_ pet: PetInstance, now: CFTimeInterval) -> Bool {
+        let elapsedMs = (now - pet.lastTickTime) * 1000
+        return elapsedMs >= Double(pet.currentInterval)
+    }
+
+    /// Returns true when the pet has fully faded out and should be removed.
+    private func fadeOutKilledPet(_ pet: PetInstance) -> Bool {
+        pet.killTickCount += 1
+        let opacity = max(0, 1.0 - Double(pet.killTickCount) / 20.0)
+        pet.panel.alphaValue = opacity
+        return opacity <= 0
+    }
+
+    private func updatePanelLevels() {
+        let level: NSWindow.Level = environmentDetector.isFullScreenActive() ? .normal : .statusBar
+        activePets.forEach { $0.panel.level = level }
     }
 
     private func checkBounds(_ pet: PetInstance) {
         let screens = NSScreen.screens
         guard !screens.isEmpty else { return }
 
-        let pos = pet.position
+        let petSize = CGSize(
+            width: CGFloat(pet.spriteSheet.frameWidth),
+            height: CGFloat(pet.spriteSheet.frameHeight)
+        )
+        let totalBounds = screens.reduce(screens[0].frame) { $0.union($1.frame) }
+        let visibleBottom = findVisibleBottom(for: pet, screens: screens, totalBounds: totalBounds)
+
+        snapToScreenBottom(pet, visibleBottom: visibleBottom)
+        detectLanding(pet, visibleBottom: visibleBottom)
+        clampToHorizontalEdges(pet, petWidth: petSize.width, totalBounds: totalBounds)
+        clampAboveBottom(pet, visibleBottom: visibleBottom)
+        respawnIfOffScreen(pet, petHeight: petSize.height, totalBounds: totalBounds)
+    }
+
+    private func findVisibleBottom(
+        for pet: PetInstance,
+        screens: [NSScreen],
+        totalBounds: NSRect
+    ) -> CGFloat {
         let petW = CGFloat(pet.spriteSheet.frameWidth)
         let petH = CGFloat(pet.spriteSheet.frameHeight)
-
-        // Union of all screen frames — the total desktop area
-        let totalBounds = screens.reduce(screens[0].frame) { $0.union($1.frame) }
-
-        // Find which screen the pet center is on
-        let petCenter = CGPoint(x: pos.x + petW / 2, y: pos.y + petH / 2)
+        let petCenter = CGPoint(x: pet.position.x + petW / 2, y: pet.position.y + petH / 2)
         let currentScreen = screens.first(where: { $0.frame.contains(petCenter) })
             ?? screens.min(by: { $0.frame.distance(to: petCenter) < $1.frame.distance(to: petCenter) })
-        let visibleBottom = currentScreen?.visibleFrame.minY ?? totalBounds.minY
+        return currentScreen?.visibleFrame.minY ?? totalBounds.minY
+    }
 
-        // If walking on the bottom, always stick to current screen's bottom
-        if pet.currentSurface == .screenBottom {
-            pet.position.y = visibleBottom
-            pet.panel.setFrameOrigin(pet.position)
-        }
+    private func snapToScreenBottom(_ pet: PetInstance, visibleBottom: CGFloat) {
+        guard pet.currentSurface == .screenBottom else { return }
+        pet.position.y = visibleBottom
+        pet.panel.setFrameOrigin(pet.position)
+    }
 
-        // Determine current surface — use <= to catch overshoots from fast falls
+    private func detectLanding(_ pet: PetInstance, visibleBottom: CGFloat) {
         let wasInAir = pet.currentSurface == nil
         if pet.position.y <= visibleBottom + 5 {
             pet.currentSurface = .screenBottom
             pet.position.y = visibleBottom
             pet.panel.setFrameOrigin(pet.position)
-            // Just landed — trigger border hit so fall transitions to landing
             if wasInAir {
                 pet.stateMachine.handleBorderHit(type: .taskbar)
             }
         } else {
             pet.currentSurface = nil
         }
+    }
 
-        // Check edges — only when moving TOWARD the edge
-        // Border type reflects the surface the pet is ON, not the edge it hit
-        let surfaceBorderType: BorderType = switch pet.currentSurface {
+    private func clampToHorizontalEdges(_ pet: PetInstance, petWidth: CGFloat, totalBounds: NSRect) {
+        let surfaceBorderType = borderTypeForSurface(pet.currentSurface)
+
+        if pet.position.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
+            pet.position.x = totalBounds.minX
+            pet.panel.setFrameOrigin(pet.position)
+            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
+        } else if pet.position.x + petWidth >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
+            pet.position.x = totalBounds.maxX - petWidth
+            pet.panel.setFrameOrigin(pet.position)
+            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
+        }
+    }
+
+    private func borderTypeForSurface(_ surface: SurfaceType?) -> BorderType {
+        switch surface {
         case .screenBottom: .taskbar
         case .screenLeft, .screenRight: .vertical
         case .screenTop: .horizontal
         case .windowTop: .window
         case nil: .none
         }
+    }
 
-        if pet.position.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
-            pet.position.x = totalBounds.minX
-            pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
-        } else if pet.position.x + petW >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
-            pet.position.x = totalBounds.maxX - petW
-            pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
-        }
+    private func clampAboveBottom(_ pet: PetInstance, visibleBottom: CGFloat) {
+        guard pet.position.y < visibleBottom else { return }
+        pet.position.y = visibleBottom
+        pet.panel.setFrameOrigin(pet.position)
+    }
 
-        // Keep on screen bottom
-        if pos.y < visibleBottom {
-            pet.position.y = visibleBottom
-            pet.panel.setFrameOrigin(pet.position)
-        }
-
-        // Completely off all screens — respawn
-        let margin = petH * 3
-        if pos.y < totalBounds.minY - margin || pos.y > totalBounds.maxY + margin {
-            let screen = NSScreen.main?.visibleFrame ?? totalBounds
-            pet.position = CGPoint(x: screen.midX, y: screen.minY)
-            pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.respawn()
-        }
+    private func respawnIfOffScreen(_ pet: PetInstance, petHeight: CGFloat, totalBounds: NSRect) {
+        let margin = petHeight * 3
+        guard pet.position.y < totalBounds.minY - margin
+            || pet.position.y > totalBounds.maxY + margin
+        else { return }
+        let screen = NSScreen.main?.visibleFrame ?? totalBounds
+        pet.position = CGPoint(x: screen.midX, y: screen.minY)
+        pet.panel.setFrameOrigin(pet.position)
+        pet.stateMachine.respawn()
     }
 
     private func buildExpressionContext(spriteSheet: SpriteSheetLoader) -> ExpressionContext {

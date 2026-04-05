@@ -239,13 +239,7 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
         } else if path.hasSuffix("spawn/y") {
             currentSpawnY = text
         } else if path.hasSuffix("spawn/next") {
-            let animId = Int(text) ?? 0
-            let nextAnim = NextAnim(
-                animationId: animId,
-                probability: currentNextProbability,
-                only: parseBorderType(currentNextOnly)
-            )
-            currentSpawnNextAnims.append(nextAnim)
+            currentSpawnNextAnims.append(makeNextAnim(from: text))
         } else if path.hasSuffix("spawns/spawn") {
             let spawn = Spawn(
                 id: currentSpawnId,
@@ -296,35 +290,11 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
         } else if path.hasSuffix("sequence/action") {
             sequenceAction = text
         } else if path.hasSuffix("sequence/next") {
-            let animId = Int(text) ?? 0
-            let nextAnim = NextAnim(
-                animationId: animId,
-                probability: currentNextProbability,
-                only: parseBorderType(currentNextOnly)
-            )
-            sequenceNextAnims.append(nextAnim)
-        }
-
-        // Border
-        else if path.hasSuffix("border/next") {
-            let animId = Int(text) ?? 0
-            let nextAnim = NextAnim(
-                animationId: animId,
-                probability: currentNextProbability,
-                only: parseBorderType(currentNextOnly)
-            )
-            borderNextAnims.append(nextAnim)
-        }
-
-        // Gravity
-        else if path.hasSuffix("gravity/next") {
-            let animId = Int(text) ?? 0
-            let nextAnim = NextAnim(
-                animationId: animId,
-                probability: currentNextProbability,
-                only: parseBorderType(currentNextOnly)
-            )
-            gravityNextAnims.append(nextAnim)
+            sequenceNextAnims.append(makeNextAnim(from: text))
+        } else if path.hasSuffix("border/next") {
+            borderNextAnims.append(makeNextAnim(from: text))
+        } else if path.hasSuffix("gravity/next") {
+            gravityNextAnims.append(makeNextAnim(from: text))
         }
 
         // End of animation element — build the Animation
@@ -381,6 +351,14 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
     }
 
     // swiftlint:enable cyclomatic_complexity function_body_length
+
+    private func makeNextAnim(from text: String) -> NextAnim {
+        NextAnim(
+            animationId: Int(text) ?? 0,
+            probability: currentNextProbability,
+            only: parseBorderType(currentNextOnly)
+        )
+    }
 
     private func makeExpression(_ raw: String) -> FamiliarDomain.Expression {
         let isDynamic = raw.contains("random") || raw.contains("randS")

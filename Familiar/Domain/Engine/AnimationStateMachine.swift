@@ -47,10 +47,13 @@ public final class AnimationStateMachine {
         self.spawns = spawns
         self.expressionContext = expressionContext
 
-        self.fallAnimationID = animations.values.first(where: { $0.name == "fall" })?.id
-        self.dragAnimationID = animations.values.first(where: { $0.name == "drag" })?.id
-        self.killAnimationID = animations.values.first(where: { $0.name == "kill" })?.id
-        self.fallFastAnimationID = animations.values.first(where: { $0.name == "fall fast" })?.id
+        func findAnimation(named name: String) -> Int? {
+            animations.values.first(where: { $0.name == name })?.id
+        }
+        self.fallAnimationID = findAnimation(named: "fall")
+        self.dragAnimationID = findAnimation(named: "drag")
+        self.killAnimationID = findAnimation(named: "kill")
+        self.fallFastAnimationID = findAnimation(named: "fall fast")
     }
 
     // MARK: - Public API

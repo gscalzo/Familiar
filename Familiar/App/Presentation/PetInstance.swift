@@ -38,10 +38,6 @@ final class PetInstance: Identifiable {
             self?.currentSurface = nil
             self?.stateMachine.handleDragEnd()
         }
-        panel.onRemove = { [weak self] in
-            guard let self else { return }
-            _ = id
-        }
     }
 }
 
