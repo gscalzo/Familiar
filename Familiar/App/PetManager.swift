@@ -1,6 +1,7 @@
 import AppKit
 import FamiliarDomain
 import FamiliarInfrastructure
+import QuartzCore
 
 @Observable
 @MainActor
@@ -59,11 +60,16 @@ final class PetManager {
     }
 
     func removePet(id: UUID) {
-        guard let index = activePets.firstIndex(where: { $0.id == id }) else { return }
-        let pet = activePets.remove(at: index)
+        guard let pet = activePets.first(where: { $0.id == id }) else { return }
+        pet.isBeingKilled = true
+        pet.stateMachine.handleKill()
+    }
+
+    private func finishRemoval(_ pet: PetInstance) {
+        guard let index = activePets.firstIndex(where: { $0.id == pet.id }) else { return }
+        activePets.remove(at: index)
         environmentDetector.unregisterOwnPanel(pet.panel.windowNumber)
         pet.panel.close()
-
         if activePets.isEmpty { stopTimer() }
     }
 
@@ -172,14 +178,11 @@ final class PetManager {
     }
 
     private func removePetByName(_ name: String) {
-        guard let index = activePets.firstIndex(where: { $0.name == name }) else { return }
-        let pet = activePets.remove(at: index)
-        environmentDetector.unregisterOwnPanel(pet.panel.windowNumber)
-        pet.panel.close()
+        guard let pet = activePets.first(where: { $0.name == name }) else { return }
         knownMoods.removeValue(forKey: name)
-        NSLog("[Familiar] Removed pet '\(name)'")
-
-        if activePets.isEmpty { stopTimer() }
+        pet.isBeingKilled = true
+        pet.stateMachine.handleKill()
+        NSLog("[Familiar] Killing pet '\(name)'")
     }
 
     // MARK: - Pet Factory
@@ -247,9 +250,22 @@ final class PetManager {
 
         reconcileFromStateFile()
 
+        let now = CACurrentMediaTime()
+        var petsToRemove: [PetInstance] = []
         for pet in activePets {
-            pet.stateMachine.tick(currentSurface: pet.currentSurface)
-            checkBounds(pet)
+            let elapsed = (now - pet.lastTickTime) * 1000 // ms
+            if elapsed >= Double(pet.currentInterval) {
+                pet.lastTickTime = now
+                pet.stateMachine.tick(currentSurface: pet.currentSurface)
+                if pet.isBeingKilled, pet.panel.alphaValue <= 0.01 {
+                    petsToRemove.append(pet)
+                } else if !pet.isBeingKilled {
+                    checkBounds(pet)
+                }
+            }
+        }
+        for pet in petsToRemove {
+            finishRemoval(pet)
         }
 
         if environmentDetector.isFullScreenActive() {

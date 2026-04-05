@@ -5,11 +5,11 @@
 - [x] Turn around at screen edges (border hit → rotate)
 - [x] Multi-monitor walking with bottom snapping
 - [x] Animation transitions (endAnimation/endBorder)
-- [ ] Animation interval timing (per-animation speed)
-- [ ] Random idle behaviors (sleep, eat, bathe spontaneously)
-- [ ] Run/boing (occasional running + wall bounce)
+- [x] Animation interval timing (per-animation speed)
+- [x] Random idle behaviors (sleep, eat, bathe via endAnimation transitions)
+- [x] Run/boing (via endAnimation transitions)
 - [ ] Gravity/falling (fall when not on a surface)
-- [ ] Kill animation (fade-out on remove)
+- [x] Kill animation (fade-out on remove)
 
 ## Interaction
 - [ ] Drag interaction (pick up and drop)

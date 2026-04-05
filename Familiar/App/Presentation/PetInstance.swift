@@ -13,6 +13,9 @@ final class PetInstance: Identifiable {
     var position: CGPoint = .zero
     var currentSurface: SurfaceType?
     var currentScreenIndex: Int = -1
+    var currentInterval: Int = 100 // ms, updated by delegate
+    var lastTickTime: CFTimeInterval = 0
+    var isBeingKilled = false
 
     init(
         panel: PetPanel,
@@ -63,7 +66,11 @@ extension PetInstance: AnimationStateMachineDelegate {
         }
     }
 
-    nonisolated func stateMachine(_: AnimationStateMachine, didChangeInterval _: Int) {}
+    nonisolated func stateMachine(_: AnimationStateMachine, didChangeInterval ms: Int) {
+        MainActor.assumeIsolated {
+            currentInterval = max(ms, 16) // minimum 16ms (~60fps)
+        }
+    }
 
     nonisolated func stateMachineDidRequestRespawn(_: AnimationStateMachine) {}
 
