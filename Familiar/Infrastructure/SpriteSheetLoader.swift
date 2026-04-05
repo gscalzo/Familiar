@@ -45,6 +45,12 @@ public final class SpriteSheetLoader: SpriteProviding {
         return frames[validIndex]
     }
 
+    public func setFlipped(_ flipped: Bool) {
+        if flipped != isFlipped {
+            flipAllFrames()
+        }
+    }
+
     public func flipAllFrames() {
         if flippedFramesCache == nil {
             flippedFramesCache = frames.map { flippedHorizontally($0) }

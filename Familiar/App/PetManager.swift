@@ -45,6 +45,7 @@ final class PetManager {
         guard let pet = makePetInstance() else { return }
 
         pet.stateMachine.respawn()
+        pet.spriteSheet.setFlipped(!pet.stateMachine.isMovingLeft)
 
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
         pet.position = CGPoint(
@@ -161,9 +162,7 @@ final class PetManager {
         }
 
         // Sync sprite direction with state machine
-        if !pet.stateMachine.isMovingLeft {
-            pet.spriteSheet.flipAllFrames()
-        }
+        pet.spriteSheet.setFlipped(!pet.stateMachine.isMovingLeft)
 
         knownMoods[name] = mood
 
