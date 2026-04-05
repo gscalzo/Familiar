@@ -160,6 +160,11 @@ final class PetManager {
             pet.stateMachine.respawn()
         }
 
+        // Sync sprite direction with state machine
+        if !pet.stateMachine.isMovingLeft {
+            pet.spriteSheet.flipAllFrames()
+        }
+
         knownMoods[name] = mood
 
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
