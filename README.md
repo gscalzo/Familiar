@@ -41,4 +41,4 @@ Inspired by the original eSheep (1995) by Tatsutoshi Nomura and the modern [eShe
 - [Design Document](docs/plans/2026-04-04-desktop-pet-design.md)
 - [Research & References](docs/research.md)
 - [Implementation History](docs/history.md)
-- [Quality Metrics Dashboard](docs/metrics/index.html)
+- [Quality Metrics Dashboard](http://gioscalzo.com/Familiar/metrics/)
