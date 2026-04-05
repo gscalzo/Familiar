@@ -317,14 +317,14 @@ final class PetManager {
             pet.panel.setFrameOrigin(pet.position)
         }
 
-        // Determine current surface
+        // Determine current surface — use <= to catch overshoots from fast falls
         let wasInAir = pet.currentSurface == nil
-        if abs(pet.position.y - visibleBottom) < 5 {
+        if pet.position.y <= visibleBottom + 5 {
             pet.currentSurface = .screenBottom
-            // Just landed — trigger border hit so fall transitions to landing animation
+            pet.position.y = visibleBottom
+            pet.panel.setFrameOrigin(pet.position)
+            // Just landed — trigger border hit so fall transitions to landing
             if wasInAir {
-                pet.position.y = visibleBottom
-                pet.panel.setFrameOrigin(pet.position)
                 pet.stateMachine.handleBorderHit(type: .taskbar)
             }
         } else {
