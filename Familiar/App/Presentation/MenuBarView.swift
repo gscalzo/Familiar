@@ -34,8 +34,32 @@ struct MenuBarView: View {
 
         Divider()
 
+        Button("About Familiar...") { showAbout() }
+
         Button("Quit") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    private func showAbout() {
+        NSApp.activate(ignoringOtherApps: true)
+        let header = petManager.loadedPetData?.header
+        let alert = NSAlert()
+        alert.messageText = "Familiar"
+        alert.informativeText = """
+        A macOS desktop pet inspired by eSheep (1995).
+
+        Pet: \(header?.petName ?? "Unknown")
+        Author: \(header?.author ?? "Unknown")
+        Version: \(header?.version ?? "—")
+
+        Control with the fam CLI:
+          fam work    fam yay    fam think
+
+        github.com/gscalzo/Familiar
+        """
+        alert.alertStyle = .informational
+        alert.icon = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: "Familiar")
+        alert.runModal()
     }
 
     private func loadCustomPet() {
