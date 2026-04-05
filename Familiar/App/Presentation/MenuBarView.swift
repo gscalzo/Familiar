@@ -42,15 +42,17 @@ struct MenuBarView: View {
 
     private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
+        let hostingView = NSHostingView(rootView: AboutView())
+        hostingView.setFrameSize(hostingView.fittingSize)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 280),
+            contentRect: NSRect(origin: .zero, size: hostingView.fittingSize),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         window.title = "About Familiar"
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: AboutView())
+        window.contentView = hostingView
         window.center()
         window.makeKeyAndOrderFront(nil)
         aboutWindow = window

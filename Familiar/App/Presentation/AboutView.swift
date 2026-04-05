@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AboutView: View {
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Image(systemName: "pawprint.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.tint)
@@ -15,14 +15,15 @@ struct AboutView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
-            Text("A macOS desktop pet\ninspired by eSheep (1995)")
+            Text("A macOS desktop pet")
+                .multilineTextAlignment(.center)
+            Text("inspired by eSheep (1995)")
                 .multilineTextAlignment(.center)
 
             Text("By Giordano Scalzo")
                 .font(.callout)
 
             Divider()
-                .frame(width: 200)
 
             HStack(spacing: 4) {
                 Text("License:")
@@ -40,9 +41,9 @@ struct AboutView: View {
             Text("fam work  ·  fam yay  ·  fam think")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.top, 4)
+                .padding(.top, 2)
         }
-        .padding(24)
-        .frame(width: 320)
+        .padding(30)
+        .fixedSize()
     }
 }
