@@ -36,7 +36,7 @@
 ## Advanced
 - [ ] Child pets (black sheep companion)
 - [ ] Sound support
-- [ ] Multiple pet XML types simultaneously
+- [x] Multiple pet XML types (22 bundled pets with Choose Pet submenu)
 
 ## Quality
 - [x] Pre-commit hook (lint + format)

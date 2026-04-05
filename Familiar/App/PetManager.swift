@@ -39,6 +39,21 @@ final class PetManager {
         spriteSheetBase64 = base64PNG
     }
 
+    func switchPet(named name: String) {
+        guard let url = AppDelegate.findPetXML(named: name),
+              let data = try? Data(contentsOf: url)
+        else { return }
+        removeAll()
+        try? loadXML(from: data)
+        UserDefaults.standard.set(name, forKey: "lastPetName")
+        addPet()
+        NSLog("[Familiar] Switched to pet: \(name)")
+    }
+
+    var currentPetName: String {
+        loadedPetData?.header.petName ?? "eSheep"
+    }
+
     // MARK: - Pet Lifecycle
 
     func addPet() {

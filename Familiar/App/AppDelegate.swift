@@ -72,10 +72,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func findAnimationsXML() -> URL? {
-        let url = Bundle.module.url(forResource: "animations", withExtension: "xml")
-            ?? Bundle.main.url(forResource: "animations", withExtension: "xml")
-        if url == nil { NSLog("[Familiar] ERROR: animations.xml not found in bundle") }
-        return url
+        // Load last-used pet or default to esheep64
+        let lastPet = UserDefaults.standard.string(forKey: "lastPetName") ?? "esheep64"
+        return Self.findPetXML(named: lastPet) ?? Self.findPetXML(named: "esheep64")
+    }
+
+    static func findPetXML(named name: String) -> URL? {
+        Bundle.module.url(forResource: name, withExtension: "xml", subdirectory: "Pets")
+            ?? Bundle.main.url(forResource: name, withExtension: "xml", subdirectory: "Pets")
+    }
+
+    static func availablePets() -> [String] {
+        guard let petsURL = Bundle.module.url(forResource: "Pets", withExtension: nil)
+            ?? Bundle.main.url(forResource: "Pets", withExtension: nil)
+        else { return [] }
+        let files = (try? FileManager.default.contentsOfDirectory(
+            at: petsURL, includingPropertiesForKeys: nil
+        )) ?? []
+        return files
+            .filter { $0.pathExtension == "xml" }
+            .map { $0.deletingPathExtension().lastPathComponent }
+            .sorted()
     }
 
     private func setupStateFileAndStart() {

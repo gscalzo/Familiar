@@ -7,11 +7,19 @@ struct MenuBarView: View {
     @Environment(PetManager.self) private var petManager
 
     var body: some View {
+        Menu("Choose Pet") {
+            ForEach(AppDelegate.availablePets(), id: \.self) { name in
+                Button(petDisplayName(name)) {
+                    petManager.switchPet(named: name)
+                }
+            }
+            Divider()
+            Button("Load Custom XML...") { loadCustomPet() }
+                .keyboardShortcut("o")
+        }
+
         Button("Add Pet") { petManager.addPet() }
             .keyboardShortcut("n")
-
-        Button("Load Custom Pet...") { loadCustomPet() }
-            .keyboardShortcut("o")
 
         Divider()
 
@@ -64,6 +72,13 @@ struct MenuBarView: View {
     }
 
     @State private var aboutWindow: NSWindow?
+
+    private func petDisplayName(_ filename: String) -> String {
+        filename
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .capitalized
+    }
 
     private func loadCustomPet() {
         NSApp.activate(ignoringOtherApps: true)

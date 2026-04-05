@@ -74,7 +74,7 @@ struct RealXMLParsingTests {
         // Walk up from current file to find the project root
         var dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         for _ in 0 ..< 5 {
-            let candidate = dir.appendingPathComponent("Familiar/App/Resources/animations.xml")
+            let candidate = dir.appendingPathComponent("Familiar/App/Resources/Pets/esheep64.xml")
             if FileManager.default.fileExists(atPath: candidate.path) {
                 return candidate
             }
