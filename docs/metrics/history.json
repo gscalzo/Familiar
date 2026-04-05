@@ -7,10 +7,10 @@
   {
     "avgComplexity" : 1.7,
     "classes" : 32,
-    "coverage" : 85.75,
+    "coverage" : 88.9,
     "date" : "2026-04-05",
     "loc" : 2028,
     "methods" : 199,
-    "tests" : 91
+    "tests" : 116
   }
 ]
