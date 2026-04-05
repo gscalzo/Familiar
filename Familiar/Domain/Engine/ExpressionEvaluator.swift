@@ -29,9 +29,13 @@ private struct Parser {
         skipWhitespace()
         guard pos < chars.count else { return 0 }
         var result = parseTerm()
-        while true {
-            skipWhitespace()
-            guard let ch = peek() else { break }
+        result = parseAdditiveOps(result)
+        return result
+    }
+
+    private mutating func parseAdditiveOps(_ initial: Int) -> Int {
+        var result = initial
+        while let ch = peekAfterWhitespace() {
             if ch == "+" {
                 pos += 1
                 result += parseTerm()
@@ -47,16 +51,19 @@ private struct Parser {
 
     private mutating func parseTerm() -> Int {
         var result = parseFactor()
-        while true {
-            skipWhitespace()
-            guard let ch = peek() else { break }
+        result = parseMultiplicativeOps(result)
+        return result
+    }
+
+    private mutating func parseMultiplicativeOps(_ initial: Int) -> Int {
+        var result = initial
+        while let ch = peekAfterWhitespace() {
             if ch == "*" {
                 pos += 1
                 result *= parseFactor()
             } else if ch == "/" {
                 pos += 1
-                let divisor = parseFactor()
-                result = divisor == 0 ? 0 : result / divisor
+                result = safeDivide(result, by: parseFactor())
             } else {
                 break
             }
@@ -64,32 +71,41 @@ private struct Parser {
         return result
     }
 
+    private func safeDivide(_ dividend: Int, by divisor: Int) -> Int {
+        divisor == 0 ? 0 : dividend / divisor
+    }
+
+    private mutating func peekAfterWhitespace() -> Character? {
+        skipWhitespace()
+        return peek()
+    }
+
     private mutating func parseFactor() -> Int {
         skipWhitespace()
         guard let ch = peek() else { return 0 }
 
-        if ch == "-" {
-            pos += 1
-            return -parseFactor()
-        }
+        if ch == "-" { return parseNegation() }
+        if ch == "(" { return parseParenthesized() }
+        return parseAtomOrZero(ch)
+    }
 
-        if ch == "(" {
-            pos += 1
-            let result = parseExpr()
-            skipWhitespace()
-            if peek() == ")" { pos += 1 }
-            return result
-        }
-
-        if ch.isNumber {
-            return parseNumber()
-        }
-
-        if ch.isLetter {
-            return lookupVariable(parseIdentifier())
-        }
-
+    private mutating func parseAtomOrZero(_ ch: Character) -> Int {
+        if ch.isNumber { return parseNumber() }
+        if ch.isLetter { return lookupVariable(parseIdentifier()) }
         return 0
+    }
+
+    private mutating func parseNegation() -> Int {
+        pos += 1
+        return -parseFactor()
+    }
+
+    private mutating func parseParenthesized() -> Int {
+        pos += 1
+        let result = parseExpr()
+        skipWhitespace()
+        if peek() == ")" { pos += 1 }
+        return result
     }
 
     private mutating func parseNumber() -> Int {
@@ -110,21 +126,21 @@ private struct Parser {
         return name
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
+    private nonisolated(unsafe) static let variableLookup: [String: (ExpressionContext) -> Int] = [
+        "screenW": \.screenW,
+        "screenH": \.screenH,
+        "areaW": \.areaW,
+        "areaH": \.areaH,
+        "imageW": \.imageW,
+        "imageH": \.imageH,
+        "imageX": \.imageX,
+        "imageY": \.imageY,
+        "random": \.random,
+        "randS": \.randS,
+        "scale": \.scale,
+    ]
+
     private func lookupVariable(_ name: String) -> Int {
-        switch name {
-        case "screenW": context.screenW
-        case "screenH": context.screenH
-        case "areaW": context.areaW
-        case "areaH": context.areaH
-        case "imageW": context.imageW
-        case "imageH": context.imageH
-        case "imageX": context.imageX
-        case "imageY": context.imageY
-        case "random": context.random
-        case "randS": context.randS
-        case "scale": context.scale
-        default: 0
-        }
+        Self.variableLookup[name]?(context) ?? 0
     }
 }

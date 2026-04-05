@@ -18,15 +18,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             reason: "Desktop pet animation"
         )
 
-        if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
-            if !CGPreflightScreenCaptureAccess() {
-                showOnboardingWindow()
-                return
-            }
-            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-        }
-
+        if needsOnboarding() { return }
         loadDefaultPetAndSpawn()
+    }
+
+    private func needsOnboarding() -> Bool {
+        guard !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return false }
+        guard !CGPreflightScreenCaptureAccess() else {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            return false
+        }
+        showOnboardingWindow()
+        return true
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
@@ -54,12 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func loadDefaultPetAndSpawn() {
-        let xmlURL = Bundle.module.url(forResource: "animations", withExtension: "xml")
-            ?? Bundle.main.url(forResource: "animations", withExtension: "xml")
-        guard let url = xmlURL else {
-            NSLog("[Familiar] ERROR: animations.xml not found in bundle")
-            return
-        }
+        guard let url = findAnimationsXML() else { return }
         NSLog("[Familiar] Loading XML from: \(url.path)")
         do {
             let data = try Data(contentsOf: url)
@@ -67,24 +65,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSLog(
                 "[Familiar] XML loaded: \(petManager.loadedPetData?.header.petName ?? "?"), \(petManager.loadedPetData?.animations.count ?? 0) animations"
             )
-
-            // Set up state file and animation config
-            let watcher = petManager.stateFileWatcher
-            watcher.writeDefaultConfigIfNeeded()
-            petManager.loadAnimationConfig()
-
-            // Ensure default state file exists so reconciliation spawns a pet
-            if !watcher.stateFileExists() || watcher.readStates().isEmpty {
-                watcher.writeStates(["default": PetState.default])
-                NSLog("[Familiar] Wrote default state file")
-            }
-
-            // Start the timer; reconciliation on first tick will spawn pets from state file
-            petManager.ensureTimerStarted()
-
-            NSLog("[Familiar] Pet manager initialized. Reconciliation will spawn pets.")
+            setupStateFileAndStart()
         } catch {
             NSLog("[Familiar] ERROR loading XML: \(error)")
         }
+    }
+
+    private func findAnimationsXML() -> URL? {
+        let url = Bundle.module.url(forResource: "animations", withExtension: "xml")
+            ?? Bundle.main.url(forResource: "animations", withExtension: "xml")
+        if url == nil { NSLog("[Familiar] ERROR: animations.xml not found in bundle") }
+        return url
+    }
+
+    private func setupStateFileAndStart() {
+        let watcher = petManager.stateFileWatcher
+        watcher.writeDefaultConfigIfNeeded()
+        petManager.loadAnimationConfig()
+
+        if !watcher.stateFileExists() || watcher.readStates().isEmpty {
+            watcher.writeStates(["default": PetState.default])
+            NSLog("[Familiar] Wrote default state file")
+        }
+
+        petManager.ensureTimerStarted()
+        NSLog("[Familiar] Pet manager initialized. Reconciliation will spawn pets.")
     }
 }

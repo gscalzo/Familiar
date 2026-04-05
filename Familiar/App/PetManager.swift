@@ -275,24 +275,28 @@ final class PetManager {
         reconcileFromStateFile()
 
         let now = CACurrentMediaTime()
-        var petsToRemove: [PetInstance] = []
-        for pet in activePets {
-            guard isReadyForTick(pet, now: now) else { continue }
-            pet.lastTickTime = now
-            guard !pet.stateMachine.isDragging else { continue }
-
-            pet.stateMachine.tick(currentSurface: pet.currentSurface)
-            if pet.isBeingKilled {
-                if fadeOutKilledPet(pet) { petsToRemove.append(pet) }
-            } else {
-                checkBounds(pet)
-            }
-        }
-        for pet in petsToRemove {
-            finishRemoval(pet)
-        }
+        let petsToRemove = activePets.compactMap { tickSinglePet($0, now: now) }
+        petsToRemove.forEach { finishRemoval($0) }
 
         updatePanelLevels()
+    }
+
+    /// Ticks a single pet. Returns the pet if it should be removed, nil otherwise.
+    private func tickSinglePet(_ pet: PetInstance, now: CFTimeInterval) -> PetInstance? {
+        guard isReadyForTick(pet, now: now) else { return nil }
+        pet.lastTickTime = now
+        guard !pet.stateMachine.isDragging else { return nil }
+
+        pet.stateMachine.tick(currentSurface: pet.currentSurface)
+        return processPostTick(pet)
+    }
+
+    private func processPostTick(_ pet: PetInstance) -> PetInstance? {
+        if pet.isBeingKilled {
+            return fadeOutKilledPet(pet) ? pet : nil
+        }
+        checkBounds(pet)
+        return nil
     }
 
     private func isReadyForTick(_ pet: PetInstance, now: CFTimeInterval) -> Bool {
@@ -379,13 +383,8 @@ final class PetManager {
     }
 
     private func borderTypeForSurface(_ surface: SurfaceType?) -> BorderType {
-        switch surface {
-        case .screenBottom: .taskbar
-        case .screenLeft, .screenRight: .vertical
-        case .screenTop: .horizontal
-        case .windowTop: .window
-        case nil: .none
-        }
+        guard let surface else { return .none }
+        return surface.borderType
     }
 
     private func clampAboveBottom(_ pet: PetInstance, visibleBottom: CGFloat) {

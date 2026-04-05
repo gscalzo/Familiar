@@ -13,6 +13,17 @@ public final class SpriteSheetLoader: SpriteProviding {
     public var frameHeight: Int { tileHeight }
 
     public init(base64PNG: String, tilesX: Int, tilesY: Int) throws {
+        let cgImage = try Self.decodeCGImage(from: base64PNG)
+
+        let tileW = cgImage.width / tilesX
+        let tileH = cgImage.height / tilesY
+        self.tileWidth = tileW
+        self.tileHeight = tileH
+
+        self.frames = Self.sliceFrames(from: cgImage, tilesX: tilesX, tilesY: tilesY, tileW: tileW, tileH: tileH)
+    }
+
+    private static func decodeCGImage(from base64PNG: String) throws -> CGImage {
         guard let data = Data(base64Encoded: base64PNG, options: .ignoreUnknownCharacters) else {
             throw SpriteSheetError.invalidBase64
         }
@@ -21,20 +32,22 @@ public final class SpriteSheetLoader: SpriteProviding {
         else {
             throw SpriteSheetError.invalidImage
         }
+        return cgImage
+    }
 
-        let tileW = cgImage.width / tilesX
-        let tileH = cgImage.height / tilesY
-        self.tileWidth = tileW
-        self.tileHeight = tileH
-
+    private static func sliceFrames(
+        from cgImage: CGImage, tilesX: Int, tilesY: Int, tileW: Int, tileH: Int
+    ) -> [NSImage] {
+        var result: [NSImage] = []
         for row in 0 ..< tilesY {
             for col in 0 ..< tilesX {
                 let rect = CGRect(x: col * tileW, y: row * tileH, width: tileW, height: tileH)
                 if let cropped = cgImage.cropping(to: rect) {
-                    frames.append(NSImage(cgImage: cropped, size: NSSize(width: tileW, height: tileH)))
+                    result.append(NSImage(cgImage: cropped, size: NSSize(width: tileW, height: tileH)))
                 }
             }
         }
+        return result
     }
 
     public func image(at index: Int) -> NSImage {

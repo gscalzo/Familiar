@@ -556,3 +556,52 @@ The complete feature set implemented across Tasks 1-7:
 ### Verification
 - All 91 tests pass across 12 suites
 - `./scripts/check.sh` all green (SwiftLint, SwiftFormat, build, tests)
+
+---
+
+## 2026-04-04 — Refactor all functions to CCN < 5
+
+**User request**: Refactor all Swift functions with cyclomatic complexity (CCN) above 5 to get every function below CCN 5, as measured by lizard.
+
+**Starting state**: 16 functions with CCN >= 6, the worst being `processEndElement` at CCN=35.
+
+### Key decisions and changes
+
+**XMLAnimationParser.swift** (CCN 35 -> 3, CCN 6 -> 4, CCN 7 -> 1, CCN 7 -> 1):
+- Replaced massive `processEndElement` if/else chain (CCN=35) with a handler table: array of `(suffix, handler)` pairs iterated with a for-loop
+- Extracted 33 small single-purpose handler methods (e.g., `handleHeaderAuthor`, `handleAnimationEnd`)
+- Replaced `processStartElement` if/else chain with similar handler table pattern
+- Replaced `makeExpression` string checks with static arrays and `contains(where:)`
+- Replaced `parseBorderType` switch with static dictionary lookup
+
+**ExpressionEvaluator.swift** (CCN 12 -> 2, CCN 7 -> 4, CCN 6 -> 3, CCN 6 -> 3):
+- Replaced `lookupVariable` switch (CCN=12) with static `[String: (ExpressionContext) -> Int]` dictionary using KeyPath closures
+- Split `parseFactor` into `parseFactor` + `parseAtomOrZero` to reduce branch count
+- Extracted `parseAdditiveOps` and `parseMultiplicativeOps` from `parseExpr`/`parseTerm`
+- Added helper `peekAfterWhitespace`, `safeDivide`, `parseNegation`, `parseParenthesized`
+
+**EnvironmentDetector.swift** (CCN 11 -> 2):
+- Replaced for-loop + switch in `hasAdjacentScreen` with `contains` + extracted `isAdjacent`/`edgeGap` helpers
+
+**PetManager.swift** (CCN 8 -> 2, CCN 6 -> 2):
+- Split `tickAllPets` into `tickSinglePet` and `processPostTick`
+- Moved `borderTypeForSurface` logic into `SurfaceType.borderType` computed property
+
+**AnimationStateMachine.swift** (CCN 6 -> 2, CCN 6 -> 2, CCN 6 -> 1):
+- Split `tick` into `emitFrame`, `emitMovement`, `emitInterval`, `emitOpacity`
+- Extracted `pickWeightedSpawn` from `respawn`
+- Replaced `borderType(from:)` switch with `SurfaceType.borderType` property
+
+**SpriteSheetLoader.swift** (CCN 6 -> 2):
+- Extracted `decodeCGImage` and `sliceFrames` static methods from init
+
+**AppDelegate.swift** (CCN 6 -> 2):
+- Extracted `needsOnboarding`, `findAnimationsXML`, `setupStateFileAndStart`
+
+**SurfaceType.swift**:
+- Added `borderType` computed property to centralize surface-to-border mapping
+
+### Verification
+- All 91 tests pass across 12 suites
+- lizard reports 0 warnings (all 216 functions at CCN <= 5)
+- `./scripts/check.sh` all green (SwiftLint, SwiftFormat, build, tests)

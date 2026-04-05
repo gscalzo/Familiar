@@ -62,13 +62,25 @@ public final class AnimationStateMachine {
         guard let anim = animations[currentAnimationID] else { return }
 
         let ctx = expressionContext()
-        let seq = anim.sequence
 
-        // Compute frame index
-        let frameIndex = seq.frameIndex(at: animationStep)
+        emitFrame(anim: anim)
+        emitMovement(anim: anim, ctx: ctx)
+        emitInterval(anim: anim, ctx: ctx)
+        emitOpacity(anim: anim)
+
+        animationStep += 1
+
+        if animationStep >= totalSteps {
+            handleSequenceComplete(anim, currentSurface: currentSurface)
+        }
+    }
+
+    private func emitFrame(anim: Animation) {
+        let frameIndex = anim.sequence.frameIndex(at: animationStep)
         delegate?.stateMachine(self, didChangeFrame: frameIndex)
+    }
 
-        // Interpolate movement
+    private func emitMovement(anim: Animation, ctx: ExpressionContext) {
         let startX = anim.start.x.evaluate(context: ctx)
         let endX = anim.end.x.evaluate(context: ctx)
         let startY = anim.start.y.evaluate(context: ctx)
@@ -77,14 +89,11 @@ public final class AnimationStateMachine {
         var dx = Interpolator.movement(start: startX, end: endX, step: animationStep, totalSteps: totalSteps)
         let dy = Interpolator.movement(start: startY, end: endY, step: animationStep, totalSteps: totalSteps)
 
-        // Apply direction
         if !isMovingLeft { dx = -dx }
+        if dx != 0 || dy != 0 { delegate?.stateMachine(self, didMove: dx, dy: dy) }
+    }
 
-        if dx != 0 || dy != 0 {
-            delegate?.stateMachine(self, didMove: dx, dy: dy)
-        }
-
-        // Interpolate interval
+    private func emitInterval(anim: Animation, ctx: ExpressionContext) {
         let startInterval = anim.start.interval.evaluate(context: ctx)
         let endInterval = anim.end.interval.evaluate(context: ctx)
         let interval = Interpolator.value(
@@ -92,46 +101,35 @@ public final class AnimationStateMachine {
             step: animationStep, totalSteps: totalSteps
         )
         delegate?.stateMachine(self, didChangeInterval: interval)
+    }
 
-        // Interpolate opacity
-        let startOpacity = anim.start.opacity
-        let endOpacity = anim.end.opacity
-        let opacity = startOpacity + (endOpacity - startOpacity)
+    private func emitOpacity(anim: Animation) {
+        let opacity = anim.start.opacity + (anim.end.opacity - anim.start.opacity)
             * Double(animationStep) / Double(max(totalSteps, 1))
         delegate?.stateMachine(self, didChangeOpacity: opacity)
-
-        // Advance step
-        animationStep += 1
-
-        // Check sequence completion
-        if animationStep >= totalSteps {
-            handleSequenceComplete(anim, currentSurface: currentSurface)
-        }
     }
 
     public func respawn() {
-        guard !spawns.isEmpty else { return }
+        guard let selectedSpawn = pickWeightedSpawn() else { return }
 
-        // Pick spawn by weighted probability
-        let totalProb = spawns.reduce(0) { $0 + $1.probability }
-        guard totalProb > 0 else { return }
-
-        var roll = Int.random(in: 1 ... totalProb)
-        var selectedSpawn = spawns[0]
-        for spawn in spawns {
-            roll -= spawn.probability
-            if roll <= 0 {
-                selectedSpawn = spawn
-                break
-            }
-        }
-
-        // Pick initial animation from spawn's next list
         if let nextId = TransitionPicker.pick(from: selectedSpawn.nextAnimations, context: .none) {
             setAnimation(nextId)
         }
 
         delegate?.stateMachineDidRequestRespawn(self)
+    }
+
+    private func pickWeightedSpawn() -> Spawn? {
+        guard !spawns.isEmpty else { return nil }
+        let totalProb = spawns.reduce(0) { $0 + $1.probability }
+        guard totalProb > 0 else { return nil }
+
+        var roll = Int.random(in: 1 ... totalProb)
+        for spawn in spawns {
+            roll -= spawn.probability
+            if roll <= 0 { return spawn }
+        }
+        return spawns[0]
     }
 
     public func handleDragStart() {
@@ -226,12 +224,6 @@ public final class AnimationStateMachine {
     }
 
     private func borderType(from surface: SurfaceType?) -> BorderType {
-        guard let surface else { return .none }
-        switch surface {
-        case .screenBottom: return .taskbar
-        case .screenLeft, .screenRight: return .vertical
-        case .screenTop: return .horizontal
-        case .windowTop: return .window
-        }
+        surface?.borderType ?? .none
     }
 }

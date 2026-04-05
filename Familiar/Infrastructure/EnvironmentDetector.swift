@@ -83,20 +83,23 @@ public final class EnvironmentDetector: EnvironmentDetecting {
         guard let main = NSScreen.main else { return false }
         let mainFrame = main.frame
 
-        for screen in NSScreen.screens where screen != main {
-            let other = screen.frame
-            switch edge {
-            case .right:
-                if abs(other.minX - mainFrame.maxX) < 2 { return true }
-            case .left:
-                if abs(mainFrame.minX - other.maxX) < 2 { return true }
-            case .top:
-                if abs(other.minY - mainFrame.maxY) < 2 { return true }
-            case .bottom:
-                if abs(mainFrame.minY - other.maxY) < 2 { return true }
-            }
+        return NSScreen.screens.contains { screen in
+            screen != main && isAdjacent(screen.frame, to: mainFrame, at: edge)
         }
-        return false
+    }
+
+    private func isAdjacent(_ other: NSRect, to mainFrame: NSRect, at edge: ScreenEdge) -> Bool {
+        let gap = edgeGap(other, mainFrame: mainFrame, edge: edge)
+        return abs(gap) < 2
+    }
+
+    private func edgeGap(_ other: NSRect, mainFrame: NSRect, edge: ScreenEdge) -> CGFloat {
+        switch edge {
+        case .right: other.minX - mainFrame.maxX
+        case .left: mainFrame.minX - other.maxX
+        case .top: other.minY - mainFrame.maxY
+        case .bottom: mainFrame.minY - other.maxY
+        }
     }
 
     // MARK: - Additional public methods (not in protocol)

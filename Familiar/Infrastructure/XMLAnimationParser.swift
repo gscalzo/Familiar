@@ -138,45 +138,70 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
         currentText = ""
 
         let path = elementPath.joined(separator: "/")
+        processStartElement(path: path, elementName: elementName, attributes: attributes)
+    }
 
-        if path.hasSuffix("spawns/spawn") {
-            currentSpawnId = Int(attributes["id"] ?? "0") ?? 0
-            currentSpawnProbability = Int(attributes["probability"] ?? "0") ?? 0
-            currentSpawnX = ""
-            currentSpawnY = ""
-            currentSpawnNextAnims = []
-        } else if path.hasSuffix("animations/animation") {
-            currentAnimId = Int(attributes["id"] ?? "0") ?? 0
-            currentAnimName = ""
-            startX = ""
-            startY = ""
-            startInterval = ""
-            startOffsetY = 0
-            startOpacity = 1.0
-            endX = ""
-            endY = ""
-            endInterval = ""
-            endOffsetY = 0
-            endOpacity = 1.0
-            sequenceRepeat = ""
-            sequenceRepeatFrom = 0
-            sequenceFrames = []
-            sequenceAction = nil
-            sequenceNextAnims = []
-            borderNextAnims = []
-            gravityNextAnims = []
-        } else if path.hasSuffix("animation/sequence") {
-            sequenceRepeat = attributes["repeat"] ?? "0"
-            sequenceRepeatFrom = Int(attributes["repeatfrom"] ?? "0") ?? 0
-        } else if elementName == "next" {
-            currentNextProbability = Int(attributes["probability"] ?? "0") ?? 0
-            currentNextOnly = attributes["only"] ?? ""
-        } else if path.hasSuffix("childs/child") {
-            currentChildAnimId = Int(attributes["animationid"] ?? "0") ?? 0
-            currentChildX = ""
-            currentChildY = ""
-            currentChildNext = 0
+    private func processStartElement(path: String, elementName: String, attributes: [String: String]) {
+        let pathHandlers: [(String, ([String: String]) -> Void)] = [
+            ("spawns/spawn", resetSpawnState),
+            ("animations/animation", resetAnimationState),
+            ("animation/sequence", resetSequenceState),
+            ("childs/child", resetChildState),
+        ]
+
+        for (suffix, handler) in pathHandlers where path.hasSuffix(suffix) {
+            handler(attributes)
+            return
         }
+
+        if elementName == "next" { resetNextState(attributes: attributes) }
+    }
+
+    private func resetSpawnState(attributes: [String: String]) {
+        currentSpawnId = Int(attributes["id"] ?? "0") ?? 0
+        currentSpawnProbability = Int(attributes["probability"] ?? "0") ?? 0
+        currentSpawnX = ""
+        currentSpawnY = ""
+        currentSpawnNextAnims = []
+    }
+
+    private func resetAnimationState(attributes: [String: String]) {
+        currentAnimId = Int(attributes["id"] ?? "0") ?? 0
+        currentAnimName = ""
+        startX = ""
+        startY = ""
+        startInterval = ""
+        startOffsetY = 0
+        startOpacity = 1.0
+        endX = ""
+        endY = ""
+        endInterval = ""
+        endOffsetY = 0
+        endOpacity = 1.0
+        sequenceRepeat = ""
+        sequenceRepeatFrom = 0
+        sequenceFrames = []
+        sequenceAction = nil
+        sequenceNextAnims = []
+        borderNextAnims = []
+        gravityNextAnims = []
+    }
+
+    private func resetSequenceState(attributes: [String: String]) {
+        sequenceRepeat = attributes["repeat"] ?? "0"
+        sequenceRepeatFrom = Int(attributes["repeatfrom"] ?? "0") ?? 0
+    }
+
+    private func resetNextState(attributes: [String: String]) {
+        currentNextProbability = Int(attributes["probability"] ?? "0") ?? 0
+        currentNextOnly = attributes["only"] ?? ""
+    }
+
+    private func resetChildState(attributes: [String: String]) {
+        currentChildAnimId = Int(attributes["animationid"] ?? "0") ?? 0
+        currentChildX = ""
+        currentChildY = ""
+        currentChildNext = 0
     }
 
     public func parser(_: XMLParser, foundCharacters string: String) {
@@ -209,148 +234,162 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
 
     // MARK: - Private helpers
 
-    // swiftlint:disable cyclomatic_complexity function_body_length
     private func processEndElement(path: String, text: String) {
-        // Header fields
-        if path.hasSuffix("header/author") {
-            headerAuthor = text
-        } else if path.hasSuffix("header/title") {
-            headerTitle = text
-        } else if path.hasSuffix("header/petname") {
-            headerPetName = text
-        } else if path.hasSuffix("header/version") {
-            headerVersion = text
-        } else if path.hasSuffix("header/info") {
-            headerInfo = text
-        }
+        let handlers: [(String, (String) -> Void)] = [
+            ("header/author", handleHeaderAuthor),
+            ("header/title", handleHeaderTitle),
+            ("header/petname", handleHeaderPetName),
+            ("header/version", handleHeaderVersion),
+            ("header/info", handleHeaderInfo),
+            ("image/tilesx", handleImageTilesX),
+            ("image/tilesy", handleImageTilesY),
+            ("image/png", handleImagePNG),
+            ("spawn/x", handleSpawnX),
+            ("spawn/y", handleSpawnY),
+            ("spawn/next", handleSpawnNext),
+            ("spawns/spawn", handleSpawnEnd),
+            ("animation/name", handleAnimationName),
+            ("start/x", handleStartX),
+            ("start/y", handleStartY),
+            ("start/interval", handleStartInterval),
+            ("start/offsety", handleStartOffsetY),
+            ("start/opacity", handleStartOpacity),
+            ("end/x", handleEndX),
+            ("end/y", handleEndY),
+            ("end/interval", handleEndInterval),
+            ("end/offsety", handleEndOffsetY),
+            ("end/opacity", handleEndOpacity),
+            ("sequence/frame", handleSequenceFrame),
+            ("sequence/action", handleSequenceAction),
+            ("sequence/next", handleSequenceNext),
+            ("border/next", handleBorderNext),
+            ("gravity/next", handleGravityNext),
+            ("animations/animation", handleAnimationEnd),
+            ("child/x", handleChildX),
+            ("child/y", handleChildY),
+            ("child/next", handleChildNext),
+            ("childs/child", handleChildEnd),
+        ]
 
-        // Image fields
-        else if path.hasSuffix("image/tilesx") {
-            tilesX = Int(text) ?? 0
-        } else if path.hasSuffix("image/tilesy") {
-            tilesY = Int(text) ?? 0
-        } else if path.hasSuffix("image/png") {
-            base64PNG = text
-        }
-
-        // Spawn fields
-        else if path.hasSuffix("spawn/x") {
-            currentSpawnX = text
-        } else if path.hasSuffix("spawn/y") {
-            currentSpawnY = text
-        } else if path.hasSuffix("spawn/next") {
-            currentSpawnNextAnims.append(makeNextAnim(from: text))
-        } else if path.hasSuffix("spawns/spawn") {
-            let spawn = Spawn(
-                id: currentSpawnId,
-                probability: currentSpawnProbability,
-                x: makeExpression(currentSpawnX),
-                y: makeExpression(currentSpawnY),
-                nextAnimations: currentSpawnNextAnims
-            )
-            spawns.append(spawn)
-        }
-
-        // Animation fields
-        else if path.hasSuffix("animation/name") {
-            currentAnimName = text
-        }
-
-        // Start movement
-        else if path.hasSuffix("start/x") {
-            startX = text
-        } else if path.hasSuffix("start/y") {
-            startY = text
-        } else if path.hasSuffix("start/interval") {
-            startInterval = text
-        } else if path.hasSuffix("start/offsety") {
-            startOffsetY = Int(text) ?? 0
-        } else if path.hasSuffix("start/opacity") {
-            startOpacity = Double(text) ?? 1.0
-        }
-
-        // End movement
-        else if path.hasSuffix("end/x") {
-            endX = text
-        } else if path.hasSuffix("end/y") {
-            endY = text
-        } else if path.hasSuffix("end/interval") {
-            endInterval = text
-        } else if path.hasSuffix("end/offsety") {
-            endOffsetY = Int(text) ?? 0
-        } else if path.hasSuffix("end/opacity") {
-            endOpacity = Double(text) ?? 1.0
-        }
-
-        // Sequence fields
-        else if path.hasSuffix("sequence/frame") {
-            if let frame = Int(text) {
-                sequenceFrames.append(frame)
-            }
-        } else if path.hasSuffix("sequence/action") {
-            sequenceAction = text
-        } else if path.hasSuffix("sequence/next") {
-            sequenceNextAnims.append(makeNextAnim(from: text))
-        } else if path.hasSuffix("border/next") {
-            borderNextAnims.append(makeNextAnim(from: text))
-        } else if path.hasSuffix("gravity/next") {
-            gravityNextAnims.append(makeNextAnim(from: text))
-        }
-
-        // End of animation element — build the Animation
-        else if path.hasSuffix("animations/animation") {
-            let startMovement = Movement(
-                x: makeExpression(startX),
-                y: makeExpression(startY),
-                interval: makeExpression(startInterval),
-                offsetY: startOffsetY,
-                opacity: startOpacity
-            )
-            let endMovement = Movement(
-                x: makeExpression(endX),
-                y: makeExpression(endY),
-                interval: makeExpression(endInterval),
-                offsetY: endOffsetY,
-                opacity: endOpacity
-            )
-            let sequence = AnimationSequence(
-                frames: sequenceFrames,
-                repeatCount: makeExpression(sequenceRepeat),
-                repeatFrom: sequenceRepeatFrom,
-                action: sequenceAction
-            )
-            let animation = Animation(
-                id: currentAnimId,
-                name: currentAnimName,
-                start: startMovement,
-                end: endMovement,
-                sequence: sequence,
-                endAnimation: sequenceNextAnims,
-                endBorder: borderNextAnims,
-                endGravity: gravityNextAnims
-            )
-            animations[currentAnimId] = animation
-        }
-
-        // Child fields
-        else if path.hasSuffix("child/x") {
-            currentChildX = text
-        } else if path.hasSuffix("child/y") {
-            currentChildY = text
-        } else if path.hasSuffix("child/next") {
-            currentChildNext = Int(text) ?? 0
-        } else if path.hasSuffix("childs/child") {
-            let child = ChildDefinition(
-                animationId: currentChildAnimId,
-                x: makeExpression(currentChildX),
-                y: makeExpression(currentChildY),
-                nextAnimationId: currentChildNext
-            )
-            children.append(child)
+        for (suffix, handler) in handlers where path.hasSuffix(suffix) {
+            handler(text)
+            return
         }
     }
 
-    // swiftlint:enable cyclomatic_complexity function_body_length
+    // MARK: - Header handlers
+
+    private func handleHeaderAuthor(_ text: String) { headerAuthor = text }
+    private func handleHeaderTitle(_ text: String) { headerTitle = text }
+    private func handleHeaderPetName(_ text: String) { headerPetName = text }
+    private func handleHeaderVersion(_ text: String) { headerVersion = text }
+    private func handleHeaderInfo(_ text: String) { headerInfo = text }
+
+    // MARK: - Image handlers
+
+    private func handleImageTilesX(_ text: String) { tilesX = Int(text) ?? 0 }
+    private func handleImageTilesY(_ text: String) { tilesY = Int(text) ?? 0 }
+    private func handleImagePNG(_ text: String) { base64PNG = text }
+
+    // MARK: - Spawn handlers
+
+    private func handleSpawnX(_ text: String) { currentSpawnX = text }
+    private func handleSpawnY(_ text: String) { currentSpawnY = text }
+    private func handleSpawnNext(_ text: String) { currentSpawnNextAnims.append(makeNextAnim(from: text)) }
+
+    private func handleSpawnEnd(_: String) {
+        let spawn = Spawn(
+            id: currentSpawnId,
+            probability: currentSpawnProbability,
+            x: makeExpression(currentSpawnX),
+            y: makeExpression(currentSpawnY),
+            nextAnimations: currentSpawnNextAnims
+        )
+        spawns.append(spawn)
+    }
+
+    // MARK: - Animation name handler
+
+    private func handleAnimationName(_ text: String) { currentAnimName = text }
+
+    // MARK: - Start movement handlers
+
+    private func handleStartX(_ text: String) { startX = text }
+    private func handleStartY(_ text: String) { startY = text }
+    private func handleStartInterval(_ text: String) { startInterval = text }
+    private func handleStartOffsetY(_ text: String) { startOffsetY = Int(text) ?? 0 }
+    private func handleStartOpacity(_ text: String) { startOpacity = Double(text) ?? 1.0 }
+
+    // MARK: - End movement handlers
+
+    private func handleEndX(_ text: String) { endX = text }
+    private func handleEndY(_ text: String) { endY = text }
+    private func handleEndInterval(_ text: String) { endInterval = text }
+    private func handleEndOffsetY(_ text: String) { endOffsetY = Int(text) ?? 0 }
+    private func handleEndOpacity(_ text: String) { endOpacity = Double(text) ?? 1.0 }
+
+    // MARK: - Sequence handlers
+
+    private func handleSequenceFrame(_ text: String) {
+        if let frame = Int(text) { sequenceFrames.append(frame) }
+    }
+
+    private func handleSequenceAction(_ text: String) { sequenceAction = text }
+    private func handleSequenceNext(_ text: String) { sequenceNextAnims.append(makeNextAnim(from: text)) }
+    private func handleBorderNext(_ text: String) { borderNextAnims.append(makeNextAnim(from: text)) }
+    private func handleGravityNext(_ text: String) { gravityNextAnims.append(makeNextAnim(from: text)) }
+
+    // MARK: - Animation end handler
+
+    private func handleAnimationEnd(_: String) {
+        let startMovement = Movement(
+            x: makeExpression(startX),
+            y: makeExpression(startY),
+            interval: makeExpression(startInterval),
+            offsetY: startOffsetY,
+            opacity: startOpacity
+        )
+        let endMovement = Movement(
+            x: makeExpression(endX),
+            y: makeExpression(endY),
+            interval: makeExpression(endInterval),
+            offsetY: endOffsetY,
+            opacity: endOpacity
+        )
+        let sequence = AnimationSequence(
+            frames: sequenceFrames,
+            repeatCount: makeExpression(sequenceRepeat),
+            repeatFrom: sequenceRepeatFrom,
+            action: sequenceAction
+        )
+        let animation = Animation(
+            id: currentAnimId,
+            name: currentAnimName,
+            start: startMovement,
+            end: endMovement,
+            sequence: sequence,
+            endAnimation: sequenceNextAnims,
+            endBorder: borderNextAnims,
+            endGravity: gravityNextAnims
+        )
+        animations[currentAnimId] = animation
+    }
+
+    // MARK: - Child handlers
+
+    private func handleChildX(_ text: String) { currentChildX = text }
+    private func handleChildY(_ text: String) { currentChildY = text }
+    private func handleChildNext(_ text: String) { currentChildNext = Int(text) ?? 0 }
+
+    private func handleChildEnd(_: String) {
+        let child = ChildDefinition(
+            animationId: currentChildAnimId,
+            x: makeExpression(currentChildX),
+            y: makeExpression(currentChildY),
+            nextAnimationId: currentChildNext
+        )
+        children.append(child)
+    }
 
     private func makeNextAnim(from text: String) -> NextAnim {
         NextAnim(
@@ -360,31 +399,25 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
         )
     }
 
+    private static let dynamicTokens = ["random", "randS", "imageX", "imageY"]
+    private static let screenTokens = ["screenW", "screenH", "areaW", "areaH"]
+
     private func makeExpression(_ raw: String) -> FamiliarDomain.Expression {
-        let isDynamic = raw.contains("random") || raw.contains("randS")
-            || raw.contains("imageX") || raw.contains("imageY")
-        let isScreenDependent = raw.contains("screenW") || raw.contains("screenH")
-            || raw.contains("areaW") || raw.contains("areaH")
+        let isDynamic = Self.dynamicTokens.contains(where: raw.contains)
+        let isScreenDependent = Self.screenTokens.contains(where: raw.contains)
         return FamiliarDomain.Expression(raw: raw, isDynamic: isDynamic, isScreenDependent: isScreenDependent)
     }
 
+    private static let borderTypeMap: [String: BorderType] = [
+        "1": .taskbar,
+        "2": .window,
+        "4": .horizontal,
+        "6": .horizontalPlus,
+        "8": .vertical,
+    ]
+
     private func parseBorderType(_ value: String) -> BorderType {
-        switch value {
-        case "", "0":
-            return .none
-        case "1":
-            return .taskbar
-        case "2":
-            return .window
-        case "4":
-            return .horizontal
-        case "6":
-            return .horizontalPlus
-        case "8":
-            return .vertical
-        default:
-            return .none
-        }
+        Self.borderTypeMap[value] ?? .none
     }
 
     private func resetState() {
