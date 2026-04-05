@@ -15,7 +15,7 @@ public final class AnimationStateMachine {
     // Current state
     public private(set) var currentAnimationID: Int = 0
     public private(set) var animationStep: Int = 0
-    public private(set) var isMovingLeft: Bool = true
+    public private(set) var isMovingLeft: Bool = .random()
     public private(set) var isDragging: Bool = false
 
     // Dependencies

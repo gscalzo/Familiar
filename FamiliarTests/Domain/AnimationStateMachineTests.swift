@@ -227,11 +227,11 @@ struct AnimationStateMachineTests {
         let delegate = MockDelegate()
         sm.delegate = delegate
 
-        #expect(sm.isMovingLeft == true) // default is true (sprite faces left)
+        let initialDirection = sm.isMovingLeft
 
         sm.setAnimationForTesting(1)
 
-        #expect(sm.isMovingLeft == false) // flip toggles to right
+        #expect(sm.isMovingLeft == !initialDirection) // flip toggles direction
         #expect(delegate.flipCount == 1)
     }
 
