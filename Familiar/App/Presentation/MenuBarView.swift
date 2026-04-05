@@ -42,21 +42,21 @@ struct MenuBarView: View {
 
     private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
-        let alert = NSAlert()
-        alert.messageText = "Familiar"
-        alert.informativeText = """
-        A macOS desktop pet inspired by eSheep (1995).
-        By Giordano Scalzo
-
-        Control with the fam CLI:
-          fam work    fam yay    fam think
-
-        github.com/gscalzo/Familiar
-        """
-        alert.alertStyle = .informational
-        alert.icon = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: "Familiar")
-        alert.runModal()
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 280),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "About Familiar"
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: AboutView())
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        aboutWindow = window
     }
+
+    @State private var aboutWindow: NSWindow?
 
     private func loadCustomPet() {
         NSApp.activate(ignoringOtherApps: true)
