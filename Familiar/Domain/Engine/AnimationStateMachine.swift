@@ -167,6 +167,7 @@ public final class AnimationStateMachine {
     public func handleBorderHit(type: BorderType) {
         guard let anim = animations[currentAnimationID] else { return }
         if let nextId = TransitionPicker.pick(from: anim.endBorder, context: type) {
+            let nextName = animations[nextId]?.name ?? "?"
             setAnimation(nextId)
         }
     }
@@ -206,6 +207,9 @@ public final class AnimationStateMachine {
 
     private func setAnimation(_ id: Int) {
         guard let anim = animations[id] else { return }
+        print(
+            "[SM] setAnimation \(anim.name)(\(id)) x=\(anim.start.x.raw) y=\(anim.start.y.raw) flip=\(anim.sequence.action ?? "none")"
+        )
         currentAnimationID = id
         animationStep = 0
 
@@ -230,6 +234,10 @@ public final class AnimationStateMachine {
 
         let borderContext = borderType(from: currentSurface)
         if let nextId = TransitionPicker.pick(from: anim.endAnimation, context: borderContext) {
+            let nextName = animations[nextId]?.name ?? "?"
+            print(
+                "[SM] seqComplete \(anim.name)(\(anim.id)) surface=\(String(describing: currentSurface)) border=\(borderContext.rawValue) → \(nextName)(\(nextId))"
+            )
             setAnimation(nextId)
         } else if let moodId = moodAnimationID {
             // No transition — loop mood animation

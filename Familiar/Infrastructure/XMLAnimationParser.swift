@@ -409,11 +409,19 @@ public final class XMLAnimationParser: NSObject, @unchecked Sendable, XMLParserD
     }
 
     private static let borderTypeMap: [String: BorderType] = [
+        // Numeric format
         "1": .taskbar,
         "2": .window,
         "4": .horizontal,
         "6": .horizontalPlus,
         "8": .vertical,
+        // String format (used by community pets)
+        "none": .none,
+        "taskbar": .taskbar,
+        "window": .window,
+        "horizontal": .horizontal,
+        "horizontal+": .horizontalPlus,
+        "vertical": .vertical,
     ]
 
     private func parseBorderType(_ value: String) -> BorderType {
