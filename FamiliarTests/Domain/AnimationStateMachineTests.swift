@@ -515,4 +515,71 @@ struct AnimationStateMachineTests {
         // pickWeightedSpawn returns nil when totalProb == 0
         #expect(delegate.respawnCount == 1)
     }
+
+    // MARK: - Wall climbing tests
+
+    @Test("border hit with vertical type triggers climb animation")
+    func borderHitVerticalTriggersClimb() {
+        let walk = makeAnimation(
+            id: 1, name: "walk", frames: [0],
+            endBorder: [
+                NextAnim(animationId: 2, probability: 100, only: .none),
+                NextAnim(animationId: 37, probability: 100, only: .vertical),
+            ]
+        )
+        let climb = makeAnimation(id: 37, name: "vertical_walk_up", frames: [10], startY: -2, endY: -2)
+        let rotate = makeAnimation(id: 2, name: "rotate1a", frames: [3])
+        let sm = AnimationStateMachine(
+            animations: [1: walk, 2: rotate, 37: climb],
+            spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        // Run many times — should sometimes pick the climb (it has same probability as rotate when context=vertical)
+        var sawClimb = false
+        for _ in 0 ..< 50 {
+            sm.setAnimationForTesting(1)
+            sm.handleBorderHit(type: .vertical)
+            if sm.currentAnimationID == 37 { sawClimb = true
+                break
+            }
+        }
+        #expect(sawClimb)
+    }
+
+    @Test("border hit with taskbar does not trigger vertical-only transition")
+    func borderHitTaskbarSkipsVerticalOnly() {
+        let walk = makeAnimation(
+            id: 1, name: "walk", frames: [0],
+            endBorder: [
+                NextAnim(animationId: 37, probability: 100, only: .vertical),
+            ]
+        )
+        let climb = makeAnimation(id: 37, name: "vertical_walk_up", frames: [10])
+        let sm = AnimationStateMachine(
+            animations: [1: walk, 37: climb],
+            spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        sm.handleBorderHit(type: .taskbar)
+
+        // Should not have transitioned (vertical only, taskbar context)
+        #expect(sm.currentAnimationID == 1)
+    }
+
+    @Test("currentAnimation exposes the active animation")
+    func currentAnimationExposed() {
+        let walk = makeAnimation(id: 1, name: "walk", frames: [0])
+        let sm = AnimationStateMachine(
+            animations: [1: walk], spawns: [],
+            expressionContext: { defaultContext }
+        )
+        sm.setAnimationForTesting(1)
+
+        #expect(sm.currentAnimation?.name == "walk")
+        #expect(sm.currentAnimation?.id == 1)
+    }
 }
