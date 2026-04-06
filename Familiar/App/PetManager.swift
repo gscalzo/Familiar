@@ -384,14 +384,27 @@ final class PetManager {
 
     private func isClimbingWall(_ pet: PetInstance) -> Bool {
         guard let surface = pet.currentSurface else { return false }
-        switch surface {
-        case .screenLeft, .screenRight: return true
-        default: return false
+        let onWall = surface == .screenLeft || surface == .screenRight
+        if onWall, !isVerticalWalkAnimation(pet) {
+            // Animation no longer vertical — pet is leaving the wall
+            pet.currentSurface = nil
+            return false
         }
+        return onWall
     }
 
     private func isWalkingOnTop(_ pet: PetInstance) -> Bool {
-        pet.currentSurface == .screenTop
+        guard pet.currentSurface == .screenTop else { return false }
+        if !isOnTopAnimation(pet) {
+            pet.currentSurface = nil
+            return false
+        }
+        return true
+    }
+
+    private func isOnTopAnimation(_ pet: PetInstance) -> Bool {
+        guard let anim = pet.stateMachine.currentAnimation else { return false }
+        return anim.name.hasPrefix("top_walk")
     }
 
     private func handleVerticalWalk(_ pet: PetInstance, totalBounds: NSRect, petSize: CGSize) {
