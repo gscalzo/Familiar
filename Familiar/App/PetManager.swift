@@ -364,11 +364,82 @@ final class PetManager {
         let totalBounds = screens.reduce(screens[0].frame) { $0.union($1.frame) }
         let visibleBottom = findVisibleBottom(for: pet, screens: screens, totalBounds: totalBounds)
 
+        // If climbing a vertical wall, handle separately
+        if isClimbingWall(pet) {
+            handleVerticalWalk(pet, totalBounds: totalBounds, petSize: petSize)
+            return
+        }
+        // If walking on top, handle separately
+        if isWalkingOnTop(pet) {
+            handleTopWalk(pet, totalBounds: totalBounds, petSize: petSize)
+            return
+        }
+
         snapToScreenBottom(pet, visibleBottom: visibleBottom)
         detectLanding(pet, visibleBottom: visibleBottom)
         clampToHorizontalEdges(pet, petWidth: petSize.width, totalBounds: totalBounds)
         clampAboveBottom(pet, visibleBottom: visibleBottom)
         respawnIfOffScreen(pet, petHeight: petSize.height, totalBounds: totalBounds)
+    }
+
+    private func isClimbingWall(_ pet: PetInstance) -> Bool {
+        guard let surface = pet.currentSurface else { return false }
+        switch surface {
+        case .screenLeft, .screenRight: return true
+        default: return false
+        }
+    }
+
+    private func isWalkingOnTop(_ pet: PetInstance) -> Bool {
+        pet.currentSurface == .screenTop
+    }
+
+    private func handleVerticalWalk(_ pet: PetInstance, totalBounds: NSRect, petSize: CGSize) {
+        // Lock X to the wall edge
+        if pet.currentSurface == .screenLeft {
+            pet.position.x = totalBounds.minX
+        } else if pet.currentSurface == .screenRight {
+            pet.position.x = totalBounds.maxX - petSize.width
+        }
+
+        // Check if hit screen top
+        let visibleTop = NSScreen.main?.visibleFrame.maxY ?? totalBounds.maxY
+        if pet.position.y + petSize.height >= visibleTop {
+            pet.position.y = visibleTop - petSize.height
+            pet.panel.setFrameOrigin(pet.position)
+            pet.currentSurface = .screenTop
+            pet.stateMachine.handleBorderHit(type: .horizontal)
+            return
+        }
+
+        // Check if dropped back to bottom (could happen if anim ended)
+        let visibleBottom = NSScreen.main?.visibleFrame.minY ?? totalBounds.minY
+        if pet.position.y <= visibleBottom {
+            pet.position.y = visibleBottom
+            pet.currentSurface = .screenBottom
+            pet.stateMachine.handleBorderHit(type: .taskbar)
+        }
+
+        pet.panel.setFrameOrigin(pet.position)
+    }
+
+    private func handleTopWalk(_ pet: PetInstance, totalBounds: NSRect, petSize: CGSize) {
+        // Lock Y to the screen top
+        let visibleTop = NSScreen.main?.visibleFrame.maxY ?? totalBounds.maxY
+        pet.position.y = visibleTop - petSize.height
+
+        // Check side collisions while on top
+        if pet.position.x <= totalBounds.minX {
+            pet.position.x = totalBounds.minX
+            pet.currentSurface = .screenLeft
+            pet.stateMachine.handleBorderHit(type: .vertical)
+        } else if pet.position.x + petSize.width >= totalBounds.maxX {
+            pet.position.x = totalBounds.maxX - petSize.width
+            pet.currentSurface = .screenRight
+            pet.stateMachine.handleBorderHit(type: .vertical)
+        }
+
+        pet.panel.setFrameOrigin(pet.position)
     }
 
     private func findVisibleBottom(
@@ -405,22 +476,37 @@ final class PetManager {
     }
 
     private func clampToHorizontalEdges(_ pet: PetInstance, petWidth: CGFloat, totalBounds: NSRect) {
-        let surfaceBorderType = borderTypeForSurface(pet.currentSurface)
-
-        if pet.position.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
-            pet.position.x = totalBounds.minX
-            pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
-        } else if pet.position.x + petWidth >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
-            pet.position.x = totalBounds.maxX - petWidth
-            pet.panel.setFrameOrigin(pet.position)
-            pet.stateMachine.handleBorderHit(type: surfaceBorderType)
+        guard let side = sideEdgeHit(pet, petWidth: petWidth, totalBounds: totalBounds) else { return }
+        snapPetToWall(pet, side: side, petWidth: petWidth, totalBounds: totalBounds)
+        pet.stateMachine.handleBorderHit(type: .vertical)
+        if isVerticalWalkAnimation(pet) {
+            pet.currentSurface = side
         }
     }
 
-    private func borderTypeForSurface(_ surface: SurfaceType?) -> BorderType {
-        guard let surface else { return .none }
-        return surface.borderType
+    private func sideEdgeHit(
+        _ pet: PetInstance, petWidth: CGFloat, totalBounds: NSRect
+    ) -> SurfaceType? {
+        if pet.position.x <= totalBounds.minX, pet.stateMachine.isMovingLeft {
+            return .screenLeft
+        }
+        if pet.position.x + petWidth >= totalBounds.maxX, !pet.stateMachine.isMovingLeft {
+            return .screenRight
+        }
+        return nil
+    }
+
+    private func snapPetToWall(
+        _ pet: PetInstance, side: SurfaceType, petWidth: CGFloat, totalBounds: NSRect
+    ) {
+        pet.position.x = side == .screenLeft ? totalBounds.minX : totalBounds.maxX - petWidth
+        pet.panel.setFrameOrigin(pet.position)
+    }
+
+    private func isVerticalWalkAnimation(_ pet: PetInstance) -> Bool {
+        guard let anim = pet.stateMachine.currentAnimation else { return false }
+        // Vertical walk: y movement is non-zero, x is zero
+        return anim.start.y.raw != "0" && anim.start.x.raw == "0"
     }
 
     private func clampAboveBottom(_ pet: PetInstance, visibleBottom: CGFloat) {

@@ -18,6 +18,10 @@ public final class AnimationStateMachine {
     public private(set) var isMovingLeft: Bool = .random()
     public private(set) var isDragging: Bool = false
 
+    public var currentAnimation: Animation? {
+        animations[currentAnimationID]
+    }
+
     // Dependencies
     private let animations: [Int: Animation]
     private let spawns: [Spawn]
@@ -118,21 +122,27 @@ public final class AnimationStateMachine {
         delegate?.stateMachineDidRequestRespawn(self)
     }
 
+    private static let preferredStartNames = ["walk", "idle", "walk1", "run"]
+
     private func findBestStartAnimation() -> Int {
-        // Prefer "walk" animation, then first with non-zero x movement, then first by ID
-        let walkNames = ["walk", "idle", "walk1", "run"]
-        for name in walkNames {
+        if let id = findAnimationByPreferredName() { return id }
+        if let id = findHorizontallyMovingAnimation() { return id }
+        return animations.keys.sorted().first ?? 0
+    }
+
+    private func findAnimationByPreferredName() -> Int? {
+        for name in Self.preferredStartNames {
             if let id = animations.values.first(where: { $0.name == name })?.id {
                 return id
             }
         }
-        // Find first animation with horizontal movement
-        if let id = animations.values.first(where: {
+        return nil
+    }
+
+    private func findHorizontallyMovingAnimation() -> Int? {
+        animations.values.first(where: {
             $0.start.x.raw != "0" && $0.start.y.raw == "0"
-        })?.id {
-            return id
-        }
-        return animations.keys.sorted().first ?? 0
+        })?.id
     }
 
     private func pickWeightedSpawn() -> Spawn? {
@@ -167,7 +177,6 @@ public final class AnimationStateMachine {
     public func handleBorderHit(type: BorderType) {
         guard let anim = animations[currentAnimationID] else { return }
         if let nextId = TransitionPicker.pick(from: anim.endBorder, context: type) {
-            let nextName = animations[nextId]?.name ?? "?"
             setAnimation(nextId)
         }
     }
@@ -207,9 +216,6 @@ public final class AnimationStateMachine {
 
     private func setAnimation(_ id: Int) {
         guard let anim = animations[id] else { return }
-        print(
-            "[SM] setAnimation \(anim.name)(\(id)) x=\(anim.start.x.raw) y=\(anim.start.y.raw) flip=\(anim.sequence.action ?? "none")"
-        )
         currentAnimationID = id
         animationStep = 0
 
@@ -234,10 +240,6 @@ public final class AnimationStateMachine {
 
         let borderContext = borderType(from: currentSurface)
         if let nextId = TransitionPicker.pick(from: anim.endAnimation, context: borderContext) {
-            let nextName = animations[nextId]?.name ?? "?"
-            print(
-                "[SM] seqComplete \(anim.name)(\(anim.id)) surface=\(String(describing: currentSurface)) border=\(borderContext.rawValue) → \(nextName)(\(nextId))"
-            )
             setAnimation(nextId)
         } else if let moodId = moodAnimationID {
             // No transition — loop mood animation
